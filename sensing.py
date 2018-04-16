@@ -1,0 +1,102 @@
+''' Module: sensing.py
+
+The purpose of this module is to ...
+
+The module contains the following classes:
+Robot(object):
+Scanner(Map): Inherits from Robot.
+'''
+
+import numpy as np
+
+class Robot(object):
+    '''docstring'''
+    def __init__(self, x=0, y=0, corr_r=0, sigma=0, R=0, phi=None):
+
+        self.r_pose = np.asarray([x, y, corr_r])
+        self.r_msmtnoise = R
+        self.r_motionnoise = sigma
+
+        self.r_dims = len(self.r_pose)
+        self.r_phi = np.eye(self.r_dims) if phi is None else phi
+
+
+    def r_xy(self):
+        '''docstring'''
+        return (self.r_pose[0], self.r_pose[1])
+
+
+    def r_move(self):
+        '''docstring'''
+        dynamics = self.r_pose*self.r_phi
+
+        stdev = np.sqrt(self.r_motionnoise)
+        noise = np.eye(self.r_dims)*np.random.normal(loc=0,
+                                                     scale=stdev)
+        noise[self.r_dims, self.r_dims] = 0.0 # corr_r unaaffected
+
+        self.r_pose = dynamics + noise
+
+    def r_measure(self, mapval):
+        '''docstring'''
+        msmt = 0 # import single qubit msmts from QKF
+        return msmt
+
+class Scanner(Robot):
+    '''docstring'''
+
+    def __init__(self, nrows, ncols,
+                 x=0, y=0, corr_r=0, sigma=0, R=0, phi=None):
+        Robot.__init__(self,
+                       nrows=nrows,
+                       ncols=ncols,
+                       m_type=m_type,
+                       m_vals=m_vals)
+
+        self.r_questbk = np.zeros([nrows, ncols])
+        self.r_guestbk_counter = np.zeros([nrows, ncols])
+
+    def r_addguest(self, n_x, n_y, msmt):
+        '''Updates the guestbook of physical measurements at each nodes'''
+        old_prob = self.r_questbk[nx, ny]*1.0
+        old_counter = self.r_guestbk_counter[nx, ny]*1.0
+        self.r_questbk[nx, ny] = (old_prob*old_counter + msmt)/(old_counter+1)
+        self.r_guestbk_counter[nx, ny] += 1
+
+    def r_corr_length(self, v_sep, type='Gaussian'):
+        '''Returns the correlation strenght between physical and quasi
+        measurements based on a separation distance, v_sep
+        '''
+        return np.exp(-(v_sep)**2 / 2.0*corr_r**2)
+
+    def r_get_quasi_msmts(self, knn_list, born_est):
+        '''Returns quasi measurements on the neighbours of the robot,
+        using the past measurement record at the robot pose
+        '''
+        quasi_msmts = []
+
+        for neighbour in knn_list:
+            vsep = np.linalg.norm(np.subtract(neighbour, self.r_xy()))
+            quasi_born = self.r_corr_length(vsep)*born_est
+            coin_flip = 0 # import from QKF
+            quasi_msmts.append(coinflip)
+        return quasi_msmts
+
+    def r_scan_local(self, mapval, knn_list):
+        '''This function takes Born probability estimate based on physical
+        msmts in the guestbook, and then blurs each msmt on its nearest
+        neighbours to approximate a scan
+        '''
+
+        pose_x, pose_y = self.r_xy()
+
+        msmt = self.r_measure(mapval)
+        self.r_addguest(pose_x, pose_y, msmt)
+        born_est = self.r_questbk[pose_x, pose_y]
+
+        scan_msmts = [msmt]  + self.r_get_quasi_msmts(knn_list, born_est)
+        scan_posxy = [self.r_xy()] + knn_list
+
+        return zip(scan_posxy, scan_msmts)
+    
+    
