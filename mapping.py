@@ -73,23 +73,3 @@ class TrueMap(Map):
     def m_initialise(self):
         '''docstring'''
         self.m_vals = self.m_space_dyn * self.m_vals.copy()
-
-
-# ############################################################################
-# # Test Code
-# ############################################################################
-
-
-# testmap = np.arange(12).reshape(3,4)
-
-# mapobject1 = Map(nrows=3,ncols=4)
-# print(mapobject1.m_vectorise_map())
-
-# mapobject2 = Map(m_vals=testmap)
-# print(mapobject2.m_vectorise_map())
-
-# print mapobject1.m_knn_list((0,0), 1)
-# print mapobject1.m_knn_list((0,0), 1.1)
-# print mapobject1.m_knn_list((0,0), 10)
-# print mapobject1.m_knn_list((1,1), 1.1)
-# print mapobject1.m_knn_list((1,1), 2)

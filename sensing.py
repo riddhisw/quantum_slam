@@ -8,6 +8,9 @@ Scanner(Map): Inherits from Robot.
 '''
 
 import numpy as np
+import sys
+sys.path.append('../../GIT/')
+from qif.common import projected_msmt
 
 class Robot(object):
     '''docstring'''
@@ -41,9 +44,9 @@ class Robot(object):
 
     def r_measure(self, mapval):
         '''docstring'''
-        msmt = 0 # import single qubit msmts from QKF
+        msmt = projected_msmt(mapval) # imported from qif. mapval can be a list
         return msmt
-
+ 
     def r_addguest(self, n_x, n_y, msmt):
         '''Updates the guestbook of physical measurements at each nodes'''
         old_prob = self.r_questbk[nx, ny]*1.0
@@ -72,7 +75,7 @@ class Scanner(Robot):
         '''Returns the correlation strenght between physical and quasi
         measurements based on a separation distance, v_sep
         '''
-        return np.exp(-(v_sep)**2 / 2.0*corr_r**2)
+        return np.exp(-(v_sep)**2 / 2.0*self.r_pose[2]**2)
 
     def r_get_quasi_msmts(self, knn_list, born_est):
         '''Returns quasi measurements on the neighbours of the robot,
@@ -83,8 +86,7 @@ class Scanner(Robot):
         for neighbour in knn_list:
             vsep = np.linalg.norm(np.subtract(neighbour, self.r_xy()))
             quasi_born = self.r_corr_length(vsep)*born_est
-            coin_flip = 0 # import from QKF
-            quasi_msmts.append(coinflip)
+            quasi_msmts.append(self.r_measure(quasi_born))
         return quasi_msmts
 
     def r_scan_local(self, mapval, knn_list):
@@ -99,7 +101,7 @@ class Scanner(Robot):
         self.r_addguest(pose_x, pose_y, msmt)
         born_est = self.r_questbk[pose_x, pose_y]
 
-        scan_msmts = [msmt]  + self.r_get_quasi_msmts(knn_list, born_est)
+        scan_msmts = [msmt]  +  self.r_get_quasi_msmts(knn_list, born_est)
         scan_posxy = [self.r_xy()] + knn_list
 
         return zip(scan_posxy, scan_msmts)
