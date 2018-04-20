@@ -4,7 +4,7 @@ TEST SCRIPT
 Type: Module testing
 Original Script:  mapping.py
 Details: Test functionality of class objects, properties and methods 
-Outcome: WIP
+Outcome: SUCCESSFUL
 '''
 import sys
 sys.path.append('../')

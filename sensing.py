@@ -15,7 +15,7 @@ from qif.common import projected_msmt
 class Robot(object):
     '''docstring'''
     def __init__(self, x=0, y=0, corr_r=0, sigma=0, R=0, phi=None, 
-                 localgrid=[1,1]):
+                 localgridcoords=[1,1]):
 
         self.r_pose = np.asarray([x, y, corr_r])
         self.r_msmtnoise = R
@@ -24,46 +24,64 @@ class Robot(object):
         self.r_dims = len(self.r_pose)
         self.r_phi = np.eye(self.r_dims) if phi is None else phi
 
-        self.r_questbk = np.zeros(localgrid)
-        self.r_guestbk_counter = np.zeros(localgrid)
+        self.r_questbk = np.zeros(localgridcoords)
+        self.r_guestbk_counter = np.zeros(localgridcoords)
 
     def r_xy(self):
         '''docstring'''
         return (self.r_pose[0], self.r_pose[1])
 
-    def r_move(self, u_cntrl):
+    def r_move(self, u_cntrl, noisy=False):
         '''docstring'''
-        dynamics = self.r_pose*self.r_phi + u_cntrl
+        dynamics = np.dot(self.r_pose, self.r_phi) + u_cntrl
 
-        stdev = np.sqrt(self.r_motionnoise)
-        noise = np.eye(self.r_dims)*np.random.normal(loc=0,
-                                                     scale=stdev)
-        noise[self.r_dims, self.r_dims] = 0.0 # corr_r unaaffected
+        noise = np.zeros(self.r_dims)
+        if noisy:
+            stdev = np.sqrt(self.r_motionnoise)
+            noise = np.eye(self.r_dims)*np.random.normal(loc=0,
+                                                        scale=stdev)
+            noise[self.r_dims-1] = 0.0 # corr_r unaaffected
 
         self.r_pose = dynamics + noise
+        return self.r_pose, dynamics, noise
 
     def r_measure(self, mapval):
         '''docstring'''
-        msmt = projected_msmt(mapval) # imported from qif. mapval can be a list
+        msmt = projected_msmt([mapval]) # imported from qif. mapval can be a list
         return msmt
- 
-    def r_addguest(self, n_x, n_y, msmt):
-        '''Updates the guestbook of physical measurements at each nodes'''
-        old_prob = self.r_questbk[nx, ny]*1.0
-        old_counter = self.r_guestbk_counter[nx, ny]*1.0
-        self.r_questbk[nx, ny] = (old_prob*old_counter + msmt)/(old_counter+1)
-        self.r_guestbk_counter[nx, ny] += 1
 
+    def r_addguest(self, pos_x, pos_y, msmt):
+        '''Updates the guestbook of physical measurements at each nodes'''
+        n_x, n_y = self.return_position(pos_x), self.return_position(pos_y)
+
+        old_prob = self.r_questbk[n_x, n_y]*1.0
+        old_counter = self.r_guestbk_counter[n_x, n_y]*1.0
+        self.r_questbk[n_x, n_y] = (old_prob*old_counter + msmt)/(old_counter+1)
+        self.r_guestbk_counter[n_x, n_y] += 1
+    
+    @staticmethod
+    def return_position(pos):
+        print pos
+        return int(pos)
+    
 class Scanner(Robot):
     '''docstring
     '''
 
-    def __init__(self, localgrid, x=0, y=0, corr_r=0, sigma=0, R=0,
+    def __init__(self, localgridcoords, x=0, y=0, corr_r=1.42, sigma=0, R=0,
                  phi=None):
-        '''docstring
+        '''
+        Defines a 'measurement scan' that a robot makes. This consists of a
+        physical measurement taken at the robot position (x,y), and quasi
+        msmts taken on k nearest neighbours to (x,y). The quasi-msmt procedure
+        and the size of the neighbourhood depends on an effective correlation
+        length, corr_r.
+
+        localgrid: assumed known and unchanging (array of qubits on hardware)
+        corr_r = 1.42 : For k=1, nearest diagnoal neighbours are included
         '''
         Robot.__init__(self,
-                       localgrid=localgrid,
+                       localgridcoords=localgridcoords,
                        x=x,
                        y=y,
                        corr_r=corr_r,
@@ -96,6 +114,7 @@ class Scanner(Robot):
         '''
 
         pose_x, pose_y = self.r_xy()
+        print("PRINT POSITION", pose_x, pose_y)
 
         msmt = self.r_measure(mapval)
         self.r_addguest(pose_x, pose_y, msmt)
@@ -105,6 +124,5 @@ class Scanner(Robot):
         scan_posxy = [self.r_xy()] + knn_list
 
         return zip(scan_posxy, scan_msmts)
-
 
     
