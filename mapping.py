@@ -16,6 +16,17 @@ import numpy as np
 class Map(object):
     '''Generates a noise field defined over a grid structure (nrows x ncols),
     where a qubit resides at every node (including edges).
+
+    Docstring notes:
+
+    If ncols, nrows, and m_vals are specified, then map_vals will determine
+    dimensions ncols, nrows in the program. 
+
+    A singletop mvals == [[5.]] such that np.shape(self.m_vals) as [0] and 
+    [1] component
+
+    consider changing all map attributes to map properties to control that a map
+    different dims can't be added wrt original 
     '''
 
     def __init__(self, nrows=1, ncols=1, m_type=0, m_vals=None):
@@ -29,7 +40,6 @@ class Map(object):
         self.m_type = 'Pauli_z_noise'
         self.m_knn = []
 
-
     def m_vectorise_map(self):
         '''Returns a vector formed by stacking rows of self.m_vals.
         '''
@@ -40,10 +50,10 @@ class Map(object):
         '''Updates neighest neighbours list given a correlation radius
         that sets the maximally far away neighbour.
         '''
-        self.m_knn = []
+        self.m_knn = [] # reset
         for node in self.m_nodes_coords:
             mag = np.linalg.norm(np.subtract(pos, node))
-            if mag >= corr_r:
+            if mag > corr_r:
                 continue
             else:
                 self.m_knn.append(node)
