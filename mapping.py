@@ -71,15 +71,17 @@ class TrueMap(Map):
                      m_type=m_type,
                      m_vals=m_vals)
 
-        self.m_space_dyn = np.ones_like(self.m_vals) if phi_s is None else phi_s
-        self.m_time_dyn = np.ones_like(self.m_vals) if phi_t is None else phi_t
+        self.m_space_dyn = 1.0 if phi_s is None else phi_s
+        self.m_time_dyn = 1.0 if phi_t is None else phi_t
         self.sigma_s = 0 if Sigma_s is None else Sigma_s
         self.sigma_t = 0 if Sigma_t is None else Sigma_t
 
     def m_evolve(self):
-        '''docstring'''
+        '''no functionality added'''
         self.m_vals = self.m_time_dyn * self.m_vals.copy()
+        print("got to evolve")
 
     def m_initialise(self):
-        '''docstring'''
+        '''no functionality added'''
         self.m_vals = self.m_space_dyn * self.m_vals.copy()
+        print("got to initialise")

@@ -41,7 +41,7 @@ print(specificmap.m_type) # placeholder for new functionality
 print(specificmap.m_knn)
 
 '''
-Test: Return a vectorise map
+Test: Return a vectorised map and return positions of nearest neighbours
 '''
 
 mvals2 = np.arange(6).reshape(2,3)
@@ -67,3 +67,25 @@ for pos in rectmap.m_nodes_coords:
     print('')
 
 
+###############################################################################
+# Class: TrueMap
+###############################################################################
+
+'''
+Check TrueMap inheritance, m_evolve, m_initialise work for identity values
+'''
+
+truemap = TrueMap(m_vals=np.arange(9).reshape(3,3))
+
+print(truemap.m_vals)
+print(truemap.m_nodes_coords)
+print(truemap.m_nodes)
+print(truemap.m_type) # placeholder for new functionality
+print(truemap.m_knn)
+
+print(truemap.m_vectorise_map())
+print(truemap.m_knn_list((0,0), 1.42))
+truemap.m_initialise()
+truemap.m_evolve()
+
+print(truemap.m_vals)
