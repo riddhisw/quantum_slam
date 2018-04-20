@@ -31,19 +31,21 @@ class Robot(object):
         '''docstring'''
         return (self.r_pose[0], self.r_pose[1])
 
-    def r_move(self, u_cntrl, noisy=False):
+    def r_calc_motion(self, u_cntrl, phi_off=0.0):
         '''docstring'''
-        dynamics = np.dot(self.r_pose, self.r_phi) + u_cntrl
+        dynamics = np.dot(self.r_pose, self.r_phi)*phi_off + u_cntrl
+        return dynamics
 
+    def r_move(self, u_cntrl, noisy=False, phi_off=0.0):
+
+        dynamics = self.r_calc_motion(u_cntrl, phi_off=phi_off)
         noise = np.zeros(self.r_dims)
         if noisy:
             stdev = np.sqrt(self.r_motionnoise)
             noise = np.eye(self.r_dims)*np.random.normal(loc=0,
-                                                        scale=stdev)
-            noise[self.r_dims-1] = 0.0 # corr_r unaaffected
-
+                                                         scale=stdev)
+            noise[self.r_dims-1] = 0.0 # corr_r unaffected
         self.r_pose = dynamics + noise
-        return self.r_pose, dynamics, noise
 
     def r_measure(self, mapval):
         '''docstring'''
@@ -61,7 +63,7 @@ class Robot(object):
     
     @staticmethod
     def return_position(pos):
-        print pos
+        ''' Converts float to int'''
         return int(pos)
     
 class Scanner(Robot):
