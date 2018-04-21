@@ -116,7 +116,7 @@ class Scanner(Robot):
         '''
 
         pose_x, pose_y = self.r_xy()
-        print("PRINT POSITION", pose_x, pose_y)
+        # print("PRINT POSITION", pose_x, pose_y)
 
         msmt = self.r_measure(mapval)
         self.r_addguest(pose_x, pose_y, msmt)

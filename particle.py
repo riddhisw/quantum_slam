@@ -19,7 +19,7 @@ class Particle(Robot, Map):
         ''' doctring
         '''
         localgridcoords = np.shape(m_vals) if m_vals is not None else localgridcoords
-
+        
         Robot.__init__(self, 
                        localgridcoords=localgridcoords,
                        x=x,
@@ -29,6 +29,7 @@ class Particle(Robot, Map):
                        R=R,
                        phi=phi)
 
+        
         Map.__init__(self, nrows=localgridcoords[0],
                      ncols=localgridcoords[1],
                      m_type=m_type,
