@@ -2,10 +2,10 @@
 TEST SCRIPT
 
 Type: Module testing
-Original Script:  particle.py
-Class: Particle
-Methods: update_map_state, predict_scan
-Details: Test functionality of place_bot_on_grid, propagate_bot, update_state
+Original Script: slampf.py
+Class: slampf.py
+Methods: ALL
+Details: Test slam output for single particle, single control, uniform map 
 Outcome: SUCCESSFUL
 
 1. Particle maps aren't updating  - FIXED
