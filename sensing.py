@@ -10,7 +10,7 @@ Scanner(Map): Inherits from Robot.
 import numpy as np
 import sys
 sys.path.append('../../GIT/')
-from qif.common import projected_msmt
+from qif.common import projected_msmt, calc_z_proj
 
 class Robot(object):
     '''docstring'''
@@ -49,7 +49,9 @@ class Robot(object):
 
     def r_measure(self, mapval):
         '''docstring'''
-        msmt = projected_msmt([mapval]) # imported from qif. mapval can be a list
+        z_proj = calc_z_proj([mapval]) # potentially non linear msmt h(x)
+        msmt = projected_msmt([z_proj]) # quantisation
+        print("Inside r_measure, i got mval", mapval, "and I'll return ", msmt) # imported from qif. mapval can be a list
         return msmt
 
     def r_addguest(self, pos_x, pos_y, msmt):
@@ -60,12 +62,22 @@ class Robot(object):
         old_counter = self.r_guestbk_counter[n_x, n_y]*1.0
         self.r_questbk[n_x, n_y] = (old_prob*old_counter + msmt)/(old_counter+1)
         self.r_guestbk_counter[n_x, n_y] += 1
-    
+        print(">>> Guestbook counter was updated to:")
+        print self.r_guestbk_counter
+        print(">>> Guestbook was updated to:")
+        print self.r_questbk
+
+    @staticmethod # static methods can be accessed /inhereited using self.
+    def get_phase_method(prob):
+        'Returns phase between 0 and 1 qubit states given a Born probability'
+        return np.arccos(2.0*prob - 1.)
+
     @staticmethod
     def return_position(pos):
         ''' Converts float to int'''
         return int(pos)
-    
+
+
 class Scanner(Robot):
     '''docstring
     '''
@@ -103,10 +115,20 @@ class Scanner(Robot):
         '''
         quasi_msmts = []
 
+        print('')
+        print("Now I'm in r_get_quasi_msmts and I've got a physical born est: ", born_est)
+        
         for neighbour in knn_list:
+
             vsep = np.linalg.norm(np.subtract(neighbour, self.r_xy()))
             quasi_born = self.r_corr_length(vsep)*born_est
-            quasi_msmts.append(self.r_measure(quasi_born))
+            quasi_msmts.append(self.r_measure(self.get_phase_method(quasi_born)))
+
+            print('For neightbour ', neighbour, 'the separation distance is: ', vsep)
+            print('... yielding a quasi_born est of', quasi_born, 'and phase', self.get_phase_method(quasi_born))
+
+        print('Now, the quasi measurements calculations have finished.')
+        print('')
         return quasi_msmts
 
     def r_scan_local(self, mapval, knn_list):
@@ -114,6 +136,8 @@ class Scanner(Robot):
         msmts in the guestbook, and then blurs each msmt on its nearest
         neighbours to approximate a scan
         '''
+        print('')
+        print("Now I'm in r_scan_local ...")
 
         pose_x, pose_y = self.r_xy()
         # print("PRINT POSITION", pose_x, pose_y)
@@ -121,10 +145,13 @@ class Scanner(Robot):
         msmt = self.r_measure(mapval)
         self.r_addguest(pose_x, pose_y, msmt)
         born_est = self.r_questbk[pose_x, pose_y]
+        
+        print("In r_scan_local, the scan has m_val of ", mapval, "yielding msmt", msmt)
+        print("In r_scan_local, the guestbook gives a born estimate has a val of ", born_est)
 
         scan_msmts = [msmt]  +  self.r_get_quasi_msmts(knn_list, born_est)
         scan_posxy = [self.r_xy()] + knn_list
 
+        print('r_scan_local has finished.')
+        print('')
         return zip(scan_posxy, scan_msmts)
-
-    

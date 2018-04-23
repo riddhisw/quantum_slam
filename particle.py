@@ -65,18 +65,38 @@ class Particle(Robot, Map):
     def update_map_state(self, msmts_from_scan, positions_scanned):
         ''' Updates a particle map based on real and quasi msmts in a scan.
         '''
+        print('')
+        print("I'm in update_map_state. I received some msmt data for diff positions in a 'scan'")
         pos = iter(positions_scanned)
         pos2 = iter(positions_scanned)
+
+        print('In updated_map_state, the num of scan positions are', len(positions_scanned))
+        print("...before the guestbook update, the particle guestbook is: ", self.r_questbk)
         
         idx_updt = 0
         for u_x, u_y in pos: # update robot guestbook
             self.r_addguest(u_x, u_y, msmts_from_scan[idx_updt])
+            print(idx_updt)
             idx_updt += 1
         
+        print('Now I update the guestbook with msmts_from_scan.')
+        print('The updated particle guestbook is:')
+        print(self.r_questbk)
+        print('')
+        print('Now, we need to update the map:')
         for u_x, u_y in pos2: # separate loop in case a node is measured twice
             prob = self.r_questbk[u_x, u_y]
-            self.m_vals[u_x, u_y] = np.arccos(2.0*prob - 1.)
+            print("I'm in map update at position:", u_x, u_y, " with prob=", prob)
+            print("New map value should be:", np.arccos(2.0*prob - 1.))
+            self.m_vals[u_x, u_y] = self.get_phase_method(prob)
+        
+        print("Mvals is updated and is:", self.m_vals)
         self.update_state()
+        print("Let's update the particle state; the state and mapvals are:")
+        print(self.state)
+        print(self.m_vals)
+        print('update_map_state is complete')
+        print('')
 
     def predict_scan(self, positions_scanned):
         ''' Returns predicted msmts based on particle map values

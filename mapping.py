@@ -53,9 +53,12 @@ class Map(object):
         self.m_knn = [] # reset
         for node in self.m_nodes_coords:
             mag = np.linalg.norm(np.subtract(pos, node))
-            if mag > corr_r:
+
+            if mag == 0: # don't quasi-measure at the current position
                 continue
-            else:
+            if mag > corr_r: # skip  nodes that are too far away
+                continue
+            else: # the rest of the nodes are neighbours
                 self.m_knn.append(node)
         return self.m_knn
 
