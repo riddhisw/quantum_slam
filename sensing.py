@@ -105,9 +105,11 @@ class Scanner(Robot):
 
     def r_corr_length(self, v_sep, type='Gaussian'):
         '''Returns the correlation strenght between physical and quasi
-        measurements based on a separation distance, v_sep
+        measurements based on a separation distance, v_sep.BaseException
+
+        This needs more careful analysis. 
         '''
-        return np.exp(-(v_sep)**2 / 2.0*self.r_pose[2]**2)
+        return np.exp(-(v_sep)**2 / 2.0*(1./(self.r_pose[2] + 1e-14))**2) 
 
     def r_get_quasi_msmts(self, knn_list, born_est):
         '''Returns quasi measurements on the neighbours of the robot,
