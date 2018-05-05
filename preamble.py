@@ -1,5 +1,6 @@
 
 import numpy as np
+import sys, os
 import matplotlib.pyplot as plt 
 
 from qslam.slampf import ParticleFilter

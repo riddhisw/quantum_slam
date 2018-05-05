@@ -75,7 +75,7 @@ class Particle(Robot, Map):
         
         idx_updt = 0
         for u_x, u_y in pos: # update robot guestbook
-            self.r_addguest(u_x, u_y, msmts_from_scan[idx_updt])
+            self.r_addguest(u_x, u_y, msmts_from_scan[idx_updt]) #empty values in questbook addressed here
             print(idx_updt)
             idx_updt += 1
         
@@ -85,10 +85,10 @@ class Particle(Robot, Map):
         print('')
         print('Now, we need to update the map:')
         for u_x, u_y in pos2: # separate loop in case a node is measured twice
-            prob = self.r_questbk[u_x, u_y]
+            prob = self.r_questbk[u_x, u_y] # this will be not Nan if the previous loop is completed 
             print("I'm in map update at position:", u_x, u_y, " with prob=", prob)
             print("New map value should be:", np.arccos(2.0*prob - 1.))
-            self.m_vals[u_x, u_y] = self.get_phase_method(prob)
+            self.m_vals[u_x, u_y] = self.get_phase_method(prob) # this will update a nan value to a number
         
         print("Mvals is updated and is:", self.m_vals)
         self.update_state()
@@ -104,7 +104,7 @@ class Particle(Robot, Map):
         pos = iter(positions_scanned)
         predictions = []
         for pred_x, pred_y in pos:
-            predictions.append(self.r_measure(self.m_vals[pred_x, pred_y]))
+            predictions.append(self.r_measure(np.nan_to_num(self.m_vals[pred_x, pred_y])))# this needs to cope for missing data
         return predictions
 
     def place_bot_on_grid(self, proposed_move):

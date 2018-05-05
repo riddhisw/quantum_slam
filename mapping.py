@@ -31,7 +31,7 @@ class Map(object):
 
     def __init__(self, nrows=1, ncols=1, m_type=0, m_vals=None):
 
-        self.m_vals = np.zeros([nrows, ncols]) if m_vals is None else m_vals
+        self.m_vals = np.nan*np.zeros([nrows, ncols]) if m_vals is None else m_vals # empty map
 
         nrows, ncols = np.shape(self.m_vals)[0], np.shape(self.m_vals)[1]
         self.m_nodes_coords = list(product(range(nrows), range(ncols)))
@@ -81,10 +81,10 @@ class TrueMap(Map):
 
     def m_evolve(self):
         '''no functionality added'''
-        self.m_vals = self.m_time_dyn * self.m_vals.copy()
+        self.m_vals = self.m_time_dyn * self.m_vals.copy() # how do you treat missing data
         print("got to evolve")
 
     def m_initialise(self):
         '''no functionality added'''
-        self.m_vals = self.m_space_dyn * self.m_vals.copy()
+        self.m_vals = self.m_space_dyn * self.m_vals.copy() # how do you treat missing data
         print("got to initialise")

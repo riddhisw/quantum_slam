@@ -24,7 +24,7 @@ class Robot(object):
         self.r_dims = len(self.r_pose)
         self.r_phi = np.eye(self.r_dims) if phi is None else phi
 
-        self.r_questbk = np.zeros(localgridcoords)
+        self.r_questbk = np.nan*np.zeros(localgridcoords) # empty
         self.r_guestbk_counter = np.zeros(localgridcoords)
 
     def r_xy(self):
@@ -58,7 +58,7 @@ class Robot(object):
         '''Updates the guestbook of physical measurements at each nodes'''
         n_x, n_y = self.return_position(pos_x), self.return_position(pos_y)
 
-        old_prob = self.r_questbk[n_x, n_y]*1.0
+        old_prob = np.nan_to_num(self.r_questbk[n_x, n_y])*1.0 # convert to 0. if empty
         old_counter = self.r_guestbk_counter[n_x, n_y]*1.0
         self.r_questbk[n_x, n_y] = (old_prob*old_counter + msmt)/(old_counter+1)
         self.r_guestbk_counter[n_x, n_y] += 1
