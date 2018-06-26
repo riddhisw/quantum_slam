@@ -33,7 +33,7 @@ class ParticleFilter(object):
         for idx_p in range(self.num_p):
             self.particles[idx_p].weight = new_weights_[idx_p]
         self.__weights = new_weights_
-        print("@wieghts.setter was called:", new_weights_)
+        print("@weights.setter was called:", new_weights_)
 
 
     def resample(self):
@@ -137,7 +137,7 @@ class ParticleFilter(object):
             
             u_x, u_y, u_corr_r = control_path[t] # can't depend on state vairables
             knn_list = TrueMapobj.m_knn_list( [u_x, u_y],  u_corr_r)
-            env_map_val = TrueMapobj.m_vals[u_x, u_y]
+            env_map_val = TrueMapobj.m_vals[u_x, u_y] # noise lesss ?
             
             print("... at this desired pose, the we scan the env", env_map_val)
             scandata = self.global_bot.r_scan_local(env_map_val, knn_list)

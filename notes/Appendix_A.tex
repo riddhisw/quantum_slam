@@ -1,0 +1,227 @@
+
+Decoherence acting on quantum computing hardware is a key barrier to realising at-scale, high fidelity quantum computations that outstrip modern capabilities offered via networks of classical computers. At the level of hardware, the no-cloning requirement on the information stored by quantum bits (qubits) prevents a naive application of error correction from classical computing; instead, a  `0' or a `1' logical bit is encoded into a composite quantum state spread over many physical qubits. Within such hardware,  controlling a single physical qubit is difficult in the presence of decoherence and an accumulation of errors over many single qubit operations reduces the overall fidelity of a computation. In realistic operating environments, noise sources are often correlated in space or time and these noise drifts typically violate basic assumptions in quantum computation, error correction and single qubit control;  thereby correlating qubit operations and qubit measurements that would otherwise be statistically independent in any computational procedure.  Hence, any physical realisation of a meaningful quantum computational capability will require online procedures for noise characterisation and adaptive control techniques to address a range of practical problems, such as tracking drift in noise sources (in time or space) and enabling feed-forward control techniques for single qubit operations. \\
+\\
+Leading experimental platforms for quantum computing are often envisaged as spatial arrangement of qubits on a `chip', where operations required for quantum computation and quantum error correction are described using  a corresponding `quantum circuit' - a prescription of qubit control operations that act on sub-sets of qubits on the chip. A typical feature of many quantum circuits is that they often involve a \textit{projective measurement on a single qubit } within a large composite system (e.g., for error correction or final read-out).
+Once a projective measurement is made, and when this measurement outcome is known, these single qubits collapse into a classical `0' or a `1' state and thus, these qubits can be appropriated and reset for use in other computations. The availability of free or idling single qubits on hardware while quantum computations are being carried out represents an opportunity to use these qubits for sensing measurements. The inter-weaving of sensing measurements with quantum computations as any given qubit is absorbed or released from quantum circuits loaded on the hardware enables us to gather information about the underlying noise field affecting hardware in realistic operating environments.\\
+
+% .   building spatial noise reconstructions on-line while qubtis idling on physical quantum computing hardware are available for sensing measurements. The on-line characteristic is important for a range of practical problems, such as tracking  drift in noise sources (in time or space) while the noise reconstruction is constantly interleaved with decision making as to which qubit to ideally measure next. In the limit of infinite measurements, a perfect noise map can be obtained at the expense of making resource intensive and destructive projective measurements.
+%
+%A quantum circuit considers a collection of physical qubits in a composite state and quantum computations typically exploit the physical property that some subset of qubits can be quantum mechanically \textit{entangled}. While the output of a circuit is a logical `0' or logical '1', the physical implementation of circuits considers collections of physical qubits, where the difference arises typically encoding physical qubits into a large algorithm to execute both quantum computation and quantum error correction. These gate operations are finite time operations acting on one or more qubits either simultaneously, or in a sequence prescribed by the circuit. A common observation is that quantum circuits are often punctuated by a \textit{projective measurement on a single qubit } within a large composite system (e.g., for error correction or final read-out). 
+The optimal reconstruction of an arbitrary unknown spatio-temporal environment using local sensor measurements is well considered classically, but with limited extensions to the quantum computing applications, such as the one described above. A temporally drifting noise field in quantum computing hardware can be sensed and tracked using classical inference procedures and data generated from single shot qubit measurements [REFS]. For the case of dephasing noise, the success of these procedures is contingent on learning true noise correlations as the data set grows, for example, by approximating a random realisation of a process in the spectral representation or autoregressive representation, and estimating the coefficients of relevant parameterising using single qubit data [REF]. Under certain physical and experimental conditions, the analysis of spatially correlated data can be re-cast into time series analysis such that tools for characterising temporally correlated random processes can be re-applied to understand correlations over measurements spanning a spatial arrangement of qubits. However, the  change in the availability of any given qubit for sensing corresponds to additional `dynamics'; from which we seek a reconstruction of spatio-temporally correlated noise field over the entire physical platform. Further, we seek to relax the assumption that the spatial arrangement of qubits is perfectly known. The focus of this manuscript, then, is the classical inference problem of learning spatio-temporal dephasing noise correlations from a set of binary measurement data accruing from projectively measuring single qubits on a spatial grid. We resolve this inference problem by borrowing classical procedures for Bayesian inference, in particular, procedures involved in  online, recursive solutions to the simultaneous localisation and mapping (SLAM) problem in the field of autonomous environmental exploration and sensing. In seeking the optimal reconstruction of the dephasing noise map using local sensor measurements, the observation of the environment from a different spatial locations are expected to reduce errors in both the reconstruction of the map and our knowledge of the qubit location relative to the map. Hence, the temporal inter-leaving of environmental sensing measurements at different spatial locations justifies the SLAM framework - as opposed to considering two independent inference problems for localisation and mapping separately.\\
+\\
+While these analogies pertaining to a `map' and `local sensors' are useful as a high level overview of the key concepts in the inference problem at hand, we depart from the classical SLAM case in several non-trivial ways. Of these, the key challenge is that there is no quantum mechanical equivalent of scanning (measuring) an unknown environment at a new location. In our application, the dephasing field in the neighbourhood of a sensing qubit cannot be measured  without inducing state collapse of neighbouring qubits. This would be counter-productive as the neighbours of our sensing qubit are involved in computations, thus unavailable for sensing. Another challenge is the data-association formalism associated with the original SLAM framework is not directly transferable. In classical SLAM, data association means that one unambiguously  extracts `map features' from a physical scan measurements. Here, map features are sharply discontinuous from the background (e.g. local features, such as a table, or edge features, such as a wall) and often the simplest information retained about the map is the binary data of whether or not a region on a map is occupied. In contrast to classical SLAM, we obtain binary data at one location pertaining to the qubit (no scan); from which we wish to infer a non binary (floating point) value of qubit state under dephasing (a stochastic qubit phase). Further, no physical sources can produce a discontinuous features in dephasing field - namely, our map is continually varying everywhere. Hence, the environmental scan and data association framework of the SLAM problem must be reworked significantly and these changes are the core of what is justified numerically in the SLAM methodologies presented in this manuscript. \\
+\\
+The rest of the document is structured as follows. The first three sections present the modifications to the measurement models and the map data association steps that arise from the application of the SLAM framework to a quantum context described thus far. The last section outlines an online, recursive Bayesian formulation of the SLAM problem pioneered in \cite{thrun2001probabilistic} for online, probabilistic approach to building maps of a time-invariant physical landscape  using autonomously mobile robots. The recursive Bayesian formulation of the SLAM problem in \cite{thrun2001probabilistic} is algorithmically implemented using a particle filter, and we choose to adopt the same approach in this manuscript.  In \cref{sec:physicalsetting} we describe the physical set-up and measurement model, in particular we introduce the so-called Born probability distribution for measurement outcomes for a single qubit under dephasing. In \cref{sec:quasimsmtscan}, we introduce the idea of a neighbourhood around a sensing qubit for which dephasing noise information can be inferred without inducing state collapse on neighbouring (unavailable) qubits. To formalise this idea, we further introduce `quasi-measurements' - namely, binary `0' or `1' data that has been generated from a mathematical procedure within this neighbourhood as opposed to a real single qubit measurement. In \cref{sec:mapdataassocation}, we describe the data-association step - namely, how information about the environment is obtained from a set of both physical measurements obtained experimentally, as in \cref{sec:physicalsetting}; and quasi-measurements generated from procedures outlined in \cref{sec:quasimsmtscan}. In \cref{sec:qslam}, key modifications from \cref{sec:physicalsetting,sec:quasimsmtscan,sec:mapdataassocation} are incorporated into the Bayesian approach to SLAM. Further, re-sampling procedures in the particle filtering algorithm are appropriately adjusted to satisfy the modified Bayesian SLAM approach. Our theoretical framework and algorithmic performance is tested in numerical simulations in \cref{sec:ohfuckresults}; the results are discussed in \cref{sec:discussion} and we conclude in \cref{sec:conclusion}.
+\\
+\section{Physical Setting}\label{sec:physicalsetting}
+
+Our spatial arrangement of qubits are coupled to a common dephasing noise field exhibiting correlations in both space and time. The noise field is modelled as a classical, continuous dephasing field where the value of the dephasing noise at any node induces a relative stochastic phase between the ground and excited states of the single qubit superposition state, thereby affecting the  quantum mechanical probability of observing a  `0' or `1' in a Ramsey measurement. All qubits are coupled to the same dephasing field in the semi-classical approximation. The resultant measurement record, in the simplest case, are a set of time-stamped and space-indexed measurements of `0' or `1' obtained from a Ramsey experiment on a sensing qubit, where the Ramsey time is much faster than the overall timescale for a series of quantum computations. \\
+\\
+In our arbitrary spatial arrangement of qubits, the location of a single qubit is called a `node', and the arrangement is called a `grid', with all nodes specified as coordinates in $\mathbb{R}^2$. Consider a qubit grid with $N$ qubits at each node. Under the assumption that only one qubit can involved in a sensing measurement, the location of the sensing qubit is a control input i.e. an instance of when a qubit is released from computation and is available for sensing measurements. Imperfections in the control are seen as uncertainty in the classical noise field relative to the physical grid and are modelled as jitter in the knowledge of a qubit position. Physically, this arises from weak time domain jitter in the noise field and /or imprecision in technical specifications of a hardware device. We denote the position of the sensing qubit, for the $t$ measurement, as $\pose{t}:= (\pose{x,t}, \pose{y,t})$.  The trajectory of the `robot',$\{\pose{t}\}_{1:t:T}$, is not a continuous path, but resembles hopping on the grid. We will use the term robot pose to refer to $\pose{t}$, namely the particular node involved with a sensing measurement at $t$.\\
+\\
+As observed in literature, the likelihood function for a measurement on a single qubit is given by Born's rule, where the choice of $\pose{t}$ forces the measurement to happen at the $j^{th}$ node. In the limit of measuring every qubit on the grid an infinite number of times, such that $T \to \infty$, we know that the historgram of physical measurements on each qubit will yield a sample probability that converges to the true Born probability at any $j \in N$. Let $\mval{j}{t}$ denote a  dephasing noise value corresponding to the relative stochastic phase between qubit states at the node $j$, and $\pmsmt{j}{t}$, the outcome of a Ramsey measurement on a qubit at the node $j$. Let $x_t$ denote the collection of true state variables, for example, $\map{t}$ and $\pose{t}$; $u_t$ be a control input, and $\mathcal{D}_t$ be the set of all past data. Then, the Bayesian likelihood or the Born probability at the sensing node is given by:
+
+\begin{align}
+\prob{}{\pmsmt{j}{t} | x_t, u_{t-1}, \mathcal{D}_{t-1}} & = \begin{cases}
+\cos^2(\frac{\mval{j}{t}}{2}), \quad \pmsmt{j}{t}=1 \\
+\sin^2(\frac{\mval{j}{t}}{2}), \quad \pmsmt{j}{t}=0 \\
+\end{cases} \label{eqn:born_singlequbit}
+\end{align}
+
+We now wish to `smear' the measurement information obtained at $j$ to other neighbouring qubits in a small region around $j$. This is justified on the assumption that physical noise sources typically yield continuously varying noise fields over the span of a qubit grid. This is the subject of the next section.
+
+\section{Environment Scanning with Quasi-Measurements} \label{sec:quasimsmtscan}
+
+We denote $\qset{j}{t}$ as the neighbourhood of the qubit at $j$ and $\qset{j}{t}$ consists of a list of neighbouring qubits, labeled $q = 1, 2, \hdots |\qset{j}{t}|$.  The notation $|\cdot|$ represents cardinality of a set, in this case, the number of neighbours stored in $\qset{j}{t}$. The list of neighbours changes with $t$ - namely the neighbourhoods can expand or contract as data is collected. We parameterise the size of this neighbourhood as an additional physical state variable, a length-scale, $\rstate{t}:= \{\rval{j}{t}\}, \quad  j= 1, 2, \hdots N $, which specifies the degree to which physical measurement on a particular qubit contributes meaningful information about its neighbours. \\
+\\
+We introduce the concept of `quasi-measurements' to implement the concept of smearing information in a neighborhood. Unlike physical measurements taken on a qubit, quasi-measurements are simulated measurements, where the measurement outcome depends on the smearing of the map estimate at node $j$ over its neighbourhood. For now, we denote the smearing action as an arbitrary function depends on the Euclidean distance between a node $j$ and a neighboring node $q$, denoted $v_{jq}$; the length scale estimate $\rest{j}{t}$ and map estimate, $\mest{j}{t}$ at the node $j$. The smearing action is specified by an arbitrary function, $\kernel(v_{jq},\rest{j}{t}, \mest{j}{t})$, which we will simply call a \textit{kernel}. Once we have applied $\kernel(v_{jq},\rest{j}{t}, \mest{j}{t})$ to smear $\mest{j}{t}$ over all neighbors listed in $\qset{j}{t}$, a projective `quasi-measurement' is generated at $q$ using Born's rule. These quasi-measurements yield a $0$ or $1$ outcome, and are denoted $\qmsmt{q}{t}$,  where $q = 1, 2, \hdots Q, Q = |\qset{j}{t}|$. Hence, each physical measurement generates quasi-measurements over its neighbors, and the total data generated at any $t$ is effectively, $z_t := \{\pmsmt{j}{t}, \{ \qmsmt{q}{t} \}_{1:q:|\qset{j}{t}|}\}$.\\
+\\
+Each quasi-measurement at node $q$, due to the $t^{th}$ sensing measurement performed at node $j$, is generated via quantisation procedure introduced in \cite{riddhi_paper_1} and justified in \cite{riddhi_paper_2}. This quantisation procedure is captured in notation as the $\mathcal{Q}(\cdot)$, and represents a binomial coin toss experiment for a single coin and one trial with a probability of success given by the argument of $\mathcal{Q}(\cdot)$. In our case:
+\\
+\\
+\begin{align}
+\qmsmt{q}{t} & :=\mathcal{Q}\left( \prob{}{1 | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}}  \right) \label{eqn:quantiser:1}\\
+& =\mathcal{Q}\left( \cos^2(\frac{\qbornm{q}{(jq)}{t}}{2}) \label{eqn:quantiser:2} \right) \\
+\qbornm{q}{(jq)}{t} & :=  (1 - \lambda^{|\tau^{(q)}_{t-1}|})\mest{q}{t-1} + \lambda^{|\tau^{(q)}_{t-1}|}\kernel(v_{jq},\rest{j}{t}, \mest{j}{t}) \label{eqn:quantiser:3}
+\end{align} 
+\\
+\\
+\cref{eqn:quantiser:1,eqn:quantiser:2} are derived in \cite{riddhi_paper2} and \cref{eqn:quantiser:2} is a re-expression of the Born rule to generate quasi-measurements defined in \cref{eqn:quantiser:1}. The smearing of a physical measurement at $j$ to yield map information at node $q$ is captured in \cref{eqn:quantiser:3}. To implement the smearing action in \cref{eqn:quantiser:3}, we introduce two new terms: first, let $\tau^{(q)}_t$ be a set of $t$ indices that count the number of times a physical measurement is made on $q$, and let $|\tau^{(q)}_t|$ be the total number of physical measurements on $q$. We set a forgetting factor $\lambda^{|\tau^{(q)}_t|}, 0 < \lambda < 1$ such that the influence of quasi-measurements on the node $q$ vanishes as the number of physical measurements accumulate on the node $q$. The first term in \cref{eqn:quantiser:3} represents the contribution of the best estimate of the map at $q$ until $t-1$. The $t$ measurement at $j$ contributes the second term in \cref{eqn:quantiser:3} where the smearing happens according to a known, a priori $\kernel(v_{jq},\rest{j}{t}, \mest{j}{t})$. In particular,  the kernel can be any sigmoid function that enables one to invoke the continuity assumption in the behaviour of the noise field. At present, we will fully specify \cref{eqn:quantiser:3} by using  a Gaussian function but other choice of sigmoids remain unexplored (see, for details, \cite{ito1992approximation}):
+\begin{align}
+\kernel(v_{qj},\rest{j}{t}, \mest{j}{t}) &:= \mest{j}{t}\exp\left(-v_{qj}^2 / (\rest{j}{t})^2 \right)  \label{eqn:kernel}
+\end{align} \\
+\\ The general form of \cref{eqn:quantiser:3} and the \cref{eqn:kernel} are both somewhat arbitrary. One could attempt to side-step the idea of quasi-measurements by setting the map update for $\mval{q}{t}$ as $\qbornm{q}{(jq)}{t}$. However, such an equation would define an update to the state variable that does not to take account of physical measurement data at node $q$ (see for example, the first term of \cref{eqn:samplebornprob}) and does not appear to naturally arise from any optimal inference framework. \\
+\\
+With the definitions above, we consider the output of an inference framework involving both physical and quasi- measurements under two limiting cases - firstly, a uniform noise field and a rapidly fluctuating noise field. Firstly, suppose that a true noise field is uniform across the entire grid and time invariant. The output of an idealised inference framework for a uniform, time invariant noise field is that a single physical measurement at $j$ should be sufficient to reconstruct the entire field. Namely, the relevant neighbourhood $\qset{j}{t}$ should span all qubits on the grid. This means that the choice of the kernel and the true $\rval{j}{t}$ should yield the value of the true noise map, $\mval{j}{t}$, with zero error in the infinite data limit and up to some true error in the finite data limit, where a true error is just the expected difference between the true noise field and the continuity approximation used to smear the noise field over a neighborhood. A second example is that the noise is varying rapidly relative to the spacing between qubits on the grid. Then, the output of an ideal inference framework is that no smearing should occur - namely, that the physically relevant neighbourhood, $\qset{j}{t}$, is empty for all nodes $j$. \\
+\\
+The performance of any inference framework using both physical and quasi-measurements depends on two critical factors: (a) estimating the relevant length scales for all $j$ neighbourhoods, in the vector $\rstate{t}$, as data is made available and (b) that the design of the kernel function $\kernel$ improves state estimation without introducing a systematic bias to the inference procedure. The two limiting cases - a uniform field and a rapid fluctuating field - are used to numerically simulate and check quasi-measurement framework in \cref{sec:ohfuckresults}.  
+
+\section{Map Data Association with Single Qubit Sensors} \label{sec:mapdataassocation}
+
+Having defined both physical and quasi-measurements in the sections above, we wish to prescribe the data association step in SLAM: namely, the \textit{a priori} method that is used to identify the noise map features, $\mest{j}{t}$, based on a scan of the environment, $z_t$.  This does not correspond to an optimal Bayesian update, but it is an \textit{a priori} model to define noise map features based on an input set of measurements of the environment, $z_t$. \\
+\\
+%In our application,  we know that the histogram of counts of physical and quasi-measurements at each node must converge to the true Born probabilities, or the true likelihood, for each node in the infinite data limit.  
+To perform the data association step, a single physical measurement and its set of associated quasi-measurements are all treated an equal footing - this set of data, $z_t := \{\pmsmt{j}{t}, \{ \qmsmt{q}{t} \}_{1:q:|\qset{j}{t}|}\}$, collectively defines the classical equivalent of `scanning' the environment at $t$. In this notation, we define  a sample probability function defined in \cref{eqn:samplebornprob} using both physical measurements and quasi-measurements at a node, $j$. The sample probability function estimates the Born probability for measuring an `up' or a `down' qubit state at the node $j$ is:
+\begin{align}
+\probest{}{&z_t = \{1\} | x_t, u_{t-1}, \mathcal{D}_{t-1}} \nonumber \\ 
+&=  \frac{1}{|\tau^{(j)}_t|}\sum_{i \in \tau^{(j)}_t} \pmsmt{j}{i} + \frac{\lambda^{|\tau^{(j)}_t|}}{|\beta^{(j)}_t|}\sum_{i \in \beta^{(j)}_t } \qmsmt{j}{i}  \label{eqn:samplebornprob} \\ 
+\probest{}{&z_t = \{0\} | x_t, u_{t-1}, \mathcal{D}_{t-1}} \nonumber \\
+&= 1 - \probest{}{z_t = \{1\} | x_t, u_{t-1}, \mathcal{D}_{t-1}} \\
+\tau^{(j)}_t , \beta^{(j)}_t & \subseteq [1, t] \label{eqn:msmtcountset:1}  \\
+\lambda & \in (0,1) \label{eqn:forgettingfactor} 
+\end{align} We recall that the index $j$  on the right hand side of \cref{eqn:samplebornprob} denotes the location of the physical measurement at the sensing qubit given by $\pose{t} \in x_t$. For the sample probability function at the node $j$, we let $\tau^{(j)}_t $ be the set of $t$-indices for physical measurements at $j$, and $ \beta^{(j)}_t $ be the set of $t$-indices for quasi-measurements at $j$, over the entire record of $[1, t]$ sensing measurements. In \cref{eqn:samplebornprob}, the first term is the sample probability  implied by a total of $|\tau^{(j)}_t|$ physical measurements performed on the qubit at node $j$; whereas the second term is the sample probability  implied by a total of $|\beta^{(j)}_t|$ quasi-measurements. Each quasi-measurement at $j$ is generated whenever $j$ is found to be in the neighborhood of another sensing qubit at any point in sensing procedure indexed from $[1, t]$. The utility of quasi-measurements at $j$ is negligible if the qubit at $j$ is physically measured many times. We set a global forgetting factor, $\lambda$, such that the contribution to $\probest{}{z_t = \{1\} | x_t, u_{t-1}, \mathcal{D}_{t-1}}$ due to a physical measurement at $q$ is negligible for high $|\tau^{(j)}_t|$ regimes. \cref{eqn:quantiser:1,eqn:quantiser:2,eqn:quantiser:3,eqn:kernel} enable a full calculation of the quasi-measurements in the second term of \cref{eqn:samplebornprob}. \\
+\\
+\cref{eqn:msmtcountset:1} states that the counting sets, $\tau^{(j)}_t, \beta^{(j)}_t$ are subsets of the $t$-indices over $[1,t]$. We state two important properties of these subsets below:
+\begin{align}
+\tau^{(j)}_t \cap \beta^{(j)}_t & \equiv \emptyset , \quad\forall j \in N, \forall t \in T \label{eqn:msmtcountset:2} \\
+Nt & \geq \sum_{j=1}^{N} |\tau^{(j)}_t| + |\beta^{(j)}_t| , \quad \forall t \in T \label{eqn:msmtcount} 
+\end{align} \cref{eqn:msmtcountset:2}  specifies that one cannot associate a physical and a quasi-measurement for a node at $j$ at the same $t$, namely,  $\tau^{(j)}_t, \beta^{(j)}_t$ do not overlap. The total number of physical and quasi-measurements generated over the entire grid and over an entire sensing procedure until $t$ is therefore $\leq Nt$. If all neighborhoods encompass all nodes on grid over the entire sensing procedure, then equality holds in \cref{eqn:msmtcount}. \\
+\\
+The name for \cref{eqn:samplebornprob} as the sample probability function refers to the fact that this function must converge to the true Born probability in \cref{eqn:born_singlequbit} at all nodes: 
+\begin{align}
+&\lim_{|\tau^{(j)}_t| \to \infty}  \prob{}{z_t | x_t, u_{t-1}, \mathcal{D}_{t-1}} - \probest{}{z_t | x_t, u_{t-1}, \mathcal{D}_{t-1}} \\
+& \equiv \lim_{|\tau^{(j)}_t| \to \infty} \left( \prob{}{1 | x_t, u_{t-1}, \mathcal{D}_{t-1}}  -  \frac{1}{|\tau^{(j)}_t|}\sum_{i \in \tau^{(j)}_t} \pmsmt{j}{i} \right) \nonumber \\
+&\quad  -  \lim_{|\tau^{(j)}_t| \to \infty}  \frac{\lambda^{|\tau^{(j)}_t|}}{|\beta^{(j)}_t|}\sum_{i \in \beta^{(j)}_t } \qmsmt{j}{i}, \lambda \in (0,1),  \forall j \in N \\
+& =  0, \quad   \lambda \in (0,1),  \forall j \in N
+\end{align}  Since the Born rule must be satisfied irrespective of the inference procedure, we assert that the data association step is simply the inversion of the Born rule in \cref{eqn:born_singlequbit} using the sample probability function defined in \cref{eqn:samplebornprob} for measuring all `1' (physical or quasi-) measurements:
+\begin{align}
+\hat{M}_t & := \begin{cases} \mest{k}{t} \leftarrow \mest{k}{t-1}, \quad k\notin \{j, \qset{j}{t}\}  \\  \mest{k}{t} \leftarrow  \mapfunc{\pose{t}, \rstate{t}, z_t}, \quad k\in \{j, \qset{j}{t}\} \end{cases} \label{eqn:mapdatassoc:1}\\
+\mapfunc{\pose{t}, \rstate{t}, z_t} &:= \cos^{-1}\left( 2\probest{}{\{1\} | \pose{t}, \rstate{t}, \map{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right) \label{eqn:mapdatassoc:2} 
+\end{align} where the index $j$  is fixed by the location of the physical measurement at the sensing qubit  given by $\pose{t}$. The function  $\mapfunc{\pose{t}, \rstate{t}, z_t}$ theoretically prescribes how a noise map should be updated at $t$ if $\pose{t}, \rstate{t}, z_t$ are all given, and $\map{t-1}$ is available from the previous time step. The term inside the cosine, $\probest{}{\{1\} | \pose{t}, \rstate{t}, \map{t-1}, u_{t-1}, \mathcal{D}_{t-1}}$ can be approximated by \cref{eqn:samplebornprob} when the noise field is $\map{t}$ slowly drifting with respect to $t$, and the approximation is exact for the invariance condition $\map{t} = \map{t-1}$.\\
+\\
+The key concepts introduced thus far are now summarised by \cref{eqn:mapdatassoc:1}. The form of \cref{eqn:mapdatassoc:2} is provided by Born's rule for the probability of observing a `1' state on a single qubit coupled to a dephasing noise field. The function $\mapfunc{\pose{t}, \rstate{t}, z_t}$ incorporates physical and quasi-measurements, where the latter type of measurement exploits the continuously varying property of physical noise fields to spread measurement information spatially in a neighborhood parameterised by $\rstate{t}$. For slowly drifting or time invariant noise fields, the argument in the cosine term is \cref{eqn:mapdatassoc:2} is well approximated by \cref{eqn:samplebornprob}. In the next section, we incorporate  \cref{eqn:mapdatassoc:1,eqn:mapdatassoc:2} into the data association step in the classical SLAM framework.
+
+\section{Bayesian SLAM for Quantum Control} \label{sec:qslam}
+Bayes filters in \cite{thrun2001probabilistic} address the problem of estimating the state of a time-varying (dynamic) system - such as a mobile robot - from sensor measurements. In our case, a sequence of sensing measurements performed as different locations fo the qubit grid acts is a proxy for a classical mobile robot; and the smearing of a projective measurement information onto its neighbours is a proxy for the classical equivalent of taking a scan of the environment. However, our proxy for the classical mobile robot hops discontinuously rather than smoothly according to some \textit{ a priori} dynamical model. Further, our proxy environment scan itself depends on the state vector - namely, we wish to infer the relevant length scales $\rstate{t}:= \{\rval{j}{t}\}, \quad  j= 1, 2, \hdots N $ of our system.  In overcoming challenges related to the application of SLAM to a qubit control application, we are lead to naturally define an extended state vector and a new likelihood function for any a SLAM-based inference procedure. \\
+\\
+Collectively, the robot pose, $s_t$, the  noise map, $ \map{t}:=\{\mval{j}{t} \}$, and the neighbourhood length scales $\rstate{t}:= \{\rval{j}{t}\}$, for the entire qubit grid $ j= 1, 2, \hdots N $ can be written as an extended state vector, $x_t$, for our inference problem:
+\begin{align}
+x_t & := \begin{bmatrix}
+\pose{x,t} & 
+\pose{y,t}  &
+\rval{1}{t} &
+\hdots &
+\rval{N}{t} &
+\mval{1}{t} &
+\hdots &
+\mval{N}{t} 
+\end{bmatrix}^T
+\end{align}
+
+
+
+We follow \cite{thrun2001probabilistic} in establishing a Bayesian approach to classical simultaneous localisation and mapping (SLAM) problem. As in \cite{thrun2001probabilistic}, we develop a general SLAM framework and resolve it through the use of particle filtering in numerical simulations in the next section. \\
+\\
+Let $x_t$ be the extended state vector, $z_t$ be sensor data (both physical and quasi-measurements), and let $u_t$ be `controls' such that the choice of the next location for a sensing measurement is specified by an external source. Let $\mathcal{D}_t$ be the set of controls and datasets over the entire procedure, such that $\mathcal{D}_t := \{z_1, u_1, \hdots, z_t \}$. Then the Bayesian posterior can be expanded as:
+\begin{align}
+\prob{}{x_t | \mathcal{D}_t} :&= \prob{}{x_t | z_t, u_{t-1},\mathcal{D}_{t-1}} \\
+&= \frac{\prob{}{z_t | x_t, u_{t-1}, \mathcal{D}_{t-1}} \prob{}{x_t| u_{t-1}, \mathcal{D}_{t-1}} }{\prob{}{ z_t| u_{t-1}, \mathcal{D}_{t-1}}} \label{eqn:bayesfilter:1} \\
+&= \eta_t\prob{}{z_t | x_t, u_{t-1}, \mathcal{D}_{t-1}} \prob{}{x_t| u_{t-1}, \mathcal{D}_{t-1}} \label{eqn:bayesfilter:2} \\
+& = \eta_t\prob{}{z_t | x_t, u_{t-1}} \prob{}{x_t| u_{t-1}, \mathcal{D}_{t-1}} \label{eqn:bayesfilter:3} 
+\end{align} The second last equation follows from the application of Bayes Rule; and we let $\eta_t$ be the normalising constant that is unknown theoretically but a simple normalisation procedure can be implemented numerically. In \cref{eqn:bayesfilter:3}, we assert $x_t, z_t$ are Markov random processes for our application. This means  $x_t, z_t$ do not depend on the entire history of the measurements taken elsewhere on the grid over $[1, t-1)$,  but that all information about the system is available at $x_{t-1}, z_{t-1}$. We invoke this assumption to eliminate $\mathcal{D}_{t-1}$ as a conditional on $z_t$.\\
+\\
+\begin{widetext}
+	\textbf{Appendix: Recursive Bayesian SLAM Update Equation}\\\\
+	To get from \cref{eqn:bayesfilter:3} to  \cref{eqn:recusrivebayesfilter:1}, we reverse marginalise over all possible states at $t-1$. From $t-1$ to $t$, measurement data and the control, $u_{t-1}$ is incorporated and \cref{eqn:recusrivebayesfilter:1} implies the recursive Bayesian update given by \cref{eqn:recusrivebayesfilter:2}. 
+	\begin{align}
+	\prob{}{x_t | \mathcal{D}_t} &= \eta_t\prob{}{z_t | x_t, u_{t-1}} \int \prob{}{x_t| x_{t-1}, u_{t-1}}  \prob{}{ x_{t-1}| u_{t-1}, \mathcal{D}_{t-1}} dx_{t-1} \label{eqn:recusrivebayesfilter:1} \\
+	&= \eta_t\prob{}{z_t | x_t, u_{t-1}} \int \prob{}{x_t| x_{t-1}, u_{t-1}}  \prob{}{ x_{t-1}| \mathcal{D}_{t-1}} dx_{t-1} \label{eqn:recusrivebayesfilter:2}
+	\end{align} $\prob{}{x_t| x_{t-1}, u_{t-1}} $ represents known dynamical for the state (equivalently, a Markov transition probability distribution for $x$). The dynamical model is often known for classical motion tracking and map exploration applications, however, we will assign a different physical interpretation to this term in subsequent sections. \\
+	\\
+	The SLAM problem is introduced explicitly by substituting the sensing qubit coordinates, noise map, and length scales for the true state $x_t := \{s_t, r_t, \map{t} \}$ into \cref{eqn:recusrivebayesfilter:2}. Here, we let $\map{t}:= \{ \mval{j}{t}\}_{1:j:N}$, and we let $r_t :=  \{ \rval{j}{t} \}_{1:j:N}$ exist to approximate $\map{}$ with a true error given by $\epsilon_t$, as given by MyTheorem. \cref{eqn:slam:1} represents the substitution of the extended state vector as sensing qubit coordinates, noise map and length scales respectively.
+	\begin{align}
+	\prob{}{&s_t, \map{t}, r_t | \mathcal{D}_t} \nonumber \\
+	& = \eta_t\prob{}{z_t | s_t, r_t, \map{t}, u_{t-1}} \int \int \int \prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}} \prob{}{ s_t, r_t, \map{t}| s_{t-1}, r_{t-1}, \map{t-1}, u_{t-1}}  ds_{t-1} dr_{t-1} d\map{t-1}  \label{eqn:slam:1} 
+	\end{align}
+	We can expand the second term in \cref{eqn:slam:1} using the product rule. 
+	\begin{align}
+	\prob{}{ s_t, r_t, \map{t}| s_{t-1}, r_{t-1}, \map{t-1},u_{t-1}}  = \prob{}{ s_t| r_t, \map{t}, s_{t-1}, r_{t-1}, \map{t-1},u_{t-1}} \prob{}{ r_t, \map{t}| s_{t-1}, r_{t-1}, \map{t-1},u_{t-1}} \label{eqn:slam:2} 
+	\end{align}
+	\cref{eqn:slam:2} can be simplified to \cref{eqn:slam:3} if the effect of sensing qubits does not depend on the map, or the lengthscales. Similarly, if the noise field evolves independently of the availability of the qubits for sensing, then we can use \cref{eqn:slam:4}.
+	\begin{align}
+	\prob{}{ s_t, r_t, \map{t}| s_{t-1}, r_{t-1}, \map{t-1},u_{t-1}}  &= \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{ r_t, \map{t}| s_{t-1}, r_{t-1}, \map{t-1},u_{t-1}} \label{eqn:slam:3} \\
+	&= \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}} \label{eqn:slam:4}  \\
+	&= \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{  \map{t}|  r_t, r_{t-1}, \map{t-1}} \prob{}{ r_t|  r_{t-1}, \map{t-1}} \label{eqn:slam:5} \\
+	&= \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{ \map{t}|  \map{t-1}} \prob{}{ r_t|  r_{t-1}, \map{t-1}} \label{eqn:slam:6} 
+	\end{align} In \cref{eqn:slam:4}, we have two Markov transition probabilities, or dynamic models:  $\prob{}{ s_t| s_{t-1}, u_{t-1}}$ for the choice of qubits for sensing, and $\prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}}$ for time evolution of a noise field and the implied evolution of associated length-scales for the system. In \cref{eqn:slam:5}, we separate the natural evolution of the environment with any dynamical update we design for the choice of length-scales using the product rule. The natural evolution $\prob{}{  \map{t}|  r_t, r_{t-1}, \map{t-1}} $  is independent of lengthscales for the system, yielding a Markov transition probability $\prob{}{ \map{t}|  \map{t-1}}$ in \cref{eqn:slam:6}. The second term, $\prob{}{ r_t|  r_{t-1}, \map{t-1}}$ represents our choice of model for dynamically updating length-scales as the environment evolves. Substitution of  \cref{eqn:slam:6}  into \cref{eqn:slam:1} yields:
+	\begin{align}
+	&\prob{}{s_t, \map{t}, r_t | \mathcal{D}_t} \nonumber \\
+	& = \eta_t\prob{}{z_t | s_t, r_t, \map{t}, u_{t-1}} \int \prob{}{ s_t| s_{t-1}, u_{t-1}}  \int \prob{}{ \map{t}|  \map{t-1}} \int \prob{}{ r_t|  r_{t-1}, \map{t-1}} \prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}}  ds_{t-1} d\map{t-1} dr_{t-1}   \label{eqn:slam:7} 
+	\end{align} 
+	In the case that $\map{}$ represents a stationary, perfectly correlated process in the time domain, we can assume that both $\map{t} = \map{} \forall t$, This logically suggests that $r$ used for the approximation of $\map{}$ should also be time invariant, $r_t = r \forall t$. Hence, going from $t-1$ to $t$ means that the integral over $\map{t-1}$, $r_{t-1}$ will be zero everywhere unless $\map{t}=\map{t-1}, r_t = r_{t-1}$. 
+	Under these assumptions for $\map{}, r$ in the time domain, we reduce \cref{eqn:slam:7} to:
+	\begin{align}
+	&\prob{}{s_t, \map{t}, r_t | \mathcal{D}_t} = \eta_t\prob{}{z_t | x_t, u_{t-1}}\quad  \times \nonumber \\
+	& \int \prob{}{ s_t| s_{t-1}, u_{t-1}}  \int \prob{}{ \map{t}|  \map{t-1}} \int \delta(\map{t} - \map{t-1})  \delta(r_{t} - r_{t-1})  \prob{}{ r_t|  r_{t-1}, \map{t-1}} \prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}}  ds_{t-1} d\map{t-1} dr_{t-1}   \label{eqn:slam:8}  \\
+	& = \eta_t\prob{}{z_t | x_t, u_{t-1}} \int \prob{}{ s_t| s_{t-1}, u_{t-1}} \int \delta(r_{t} - r_{t-1})  \prob{}{ r_t|  r_{t-1}, \map{t}} \prob{}{s_{t-1}, r_{t-1}, \map{t}| \mathcal{D}_{t-1}}  ds_{t-1}  dr_{t-1}   \label{eqn:slam:9}  \\
+	& = \eta_t\prob{}{z_t | x_t, u_{t-1}} \int \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{s_{t-1}, r_t, \map{t}| \mathcal{D}_{t-1}}  ds_{t-1}    \label{eqn:slam:10}
+	\end{align} 
+	Under perfect time domain correlations for the noise field and time invariant length-scales, \cref{eqn:slam:7} reduces to \cref{eqn:slam:11} and the latter is directly analogous to the central problem outlined in \cite{thrun2001probabilistic}:
+	
+	\begin{align}
+	\prob{}{s_t, \map{}, r | \mathcal{D}_t}  = \eta_t\prob{}{z_t | s_t, r, \map{}, u_{t-1}} \int \prob{}{ s_t| s_{t-1}, u_{t-1}} \prob{}{s_{t-1}, r, \map{}| \mathcal{D}_{t-1}}  ds_{t-1}    \label{eqn:slam:11}
+	\end{align}
+	
+\end{widetext}
+-~-~-~-~  \textit{Placeholder: \cref{eqn:slam:7} from Appendices} -~-~-~-~  \\
+\\
+\cref{eqn:slam:7} departs from the Bayesian SLAM problem in \cite{thrun2001probabilistic} as $m$ is not a deterministic quantity that is measured with some uncertainty. In our application, $m$ represents a noise field that is sensed via a projective measurement on a single qubit. The introduction of the new term, $ \prob{}{ r_t|  r_{t-1}, \map{t-1}}$, arises from the need for a quantum analogue to the classical 'environmental scan' - namely the smearing of measurement information to neighbouring qubits using quasi-measurements. The final term $\prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}}$ is analogous to the central recurisive update equation for SLAM outlined in \cite{thrun2001probabilistic}: namely, the posterior is jointly defined over environment and local variables; and the posterior can be computed via a recursive update equation of \cref{eqn:slam:7}. \\
+\\
+For perfectly correlated noise fields in the time domain, and for time invariant length scales, we obtain a recursive SLAM equation that is analogous to the central equation in \cite{thrun2001probabilistic}, namely:\\
+\\
+-~-~-~- \textit{Placeholder:\cref{eqn:slam:11} from Appendices}-~-~-~-  \\
+\\
+
+%To recursively implement the update equation given by \cref{eqn:slam:11}, we need to know three distributions: the measurement model, $\prob{}{z_t | s_t, r, m, u_{t-1}}$ and the dynamical model $\prob{}{ s_t| s_{t-1}, u_{t-1}}$ and $\prob{}{s_0, m, r }$ for initializing the filter. \\
+The posterior in both \cref{eqn:slam:7} and \cref{eqn:slam:11} is defined over the space of all possible maps and this means that the computation of the joint posterior over maps and poses is computationally difficult,  if not intractable. As discussed in \cite{thrun2001probabilistic}, the computation of the full posterior often involves making restrictive assumptions, for example, about the type of noise field or the number of features in the noise map. \\
+\\
+We follow \cite{thrun2001probabilistic} in adopting their proposed approach of incremental likelihood maximization to avoid making restrictive assumptions in typical SLAM approaches. As a result, we do not calculate the exact joint probability distribution over the noise maps and sensing qubit positions; however we maximise the marginal likelihood of $x_{t}$, relative to  $x_{t-1}$.  Whereas a data association function may be typically unavailable in a classical robotics application, our application allows for an \textit{a priori }  data association function to update a noise map incrementally, if $\pose{t}, \rstate{t}, z_t$ are given. Hence, the incremental likelihood maximization is made possible because of the availability of a data association function, namely,  $\hat{M}_t$ in \cref{eqn:mapdatassoc:1,eqn:mapdatassoc:2}. \\
+\\
+The incremental likelihood maximisation proceeds by assuming that a function, $\hat{M}_t$, exists which prescribes how to update the map if other state variables are known perfectly. Next, one assumes that $\pose{t-1}$ is known as $\poseest{t-1}$ and $\rstate{}$ is known $\hat{r}_{t-1}$, where the time index on the estimator allows for incremental state updates. We substitute $\hat{M}_t$ into \cref{eqn:slam:11} and make the assumptions for $\pose{t-1}$  and $\rstate{}$. These substitutions yield: \\
+\\
+\begin{widetext}
+\begin{align}
+\prob{}{\pose{t}, \hat{M}_t, \rstate{} | \mathcal{D}_t}  = \eta_t\prob{}{z_t | \pose{t}, \rstate{}, \hat{M}_t, u_{t-1}} \int \prob{}{ \pose{t}| \pose{t-1}, u_{t-1}} \prob{}{\pose{t-1}, \rstate{}, \hat{M}_t| \mathcal{D}_{t-1}}  ds_{t-1}    \label{eqn:slam:12}
+\end{align}
+\end{widetext}
+
+
+\section{Numerical Results} \label{sec:ohfuckresults}
+
+
+\section{Discussion} \label{sec:discussion}
+
+
+\section{Conclusion} \label{sec:conclusion}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
