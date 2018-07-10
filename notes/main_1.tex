@@ -1,0 +1,53 @@
+Plan\\
+\\
+\textbf{Old Structure } \\ 
+\\
+1. Physical setting \\ 
+2. Quasi measurements \\ 
+3. Data association step \\
+4. Bayesian SLAM \\
+5. Numerical results \\
+6. Disucssion \\
+\\
+What was lacking \\
+- No point introducing Born's rule. confusing notation \\ 
+- No need for equation 16. \\
+- (1)and (2)  can be combined into "Physical Setting and Measurements" \\
+- No space for likelihood function\\ 
+- Map update equation should be front and center \\
+\\
+\textbf{New Structure} \\
+\\
+1. \textbf{Physical setting } \\
+- describe the state vector (x = (s,r,f)) \\
+- sigmoid approximation \\
+\\
+2. \textbf{Map update function} \\
+- turns data into update for f, if other state variables are given (s, r) \\
+\\
+3. \textbf{Quasi-measurements} \\
+- inerleaved between physical measurements \\
+\\
+4. \textbf{qSLAM} \\
+- substitute map update function into a slam bayesan update equation from appendix  \\
+\\
+5. \textbf{Particle filtering \\}
+- Introduce likelihood functions \\
+- importance sampling \\ 
+- adaptive resampling \\
+\\
+6. \textbf{ Numerical Results \\}
+7. \textbf{ Discussion \\}
+8. \textbf{ Conclusion \\}
+\\
+\\
+\textbf{Appendix: SLAM Derivation \\}
+- option A: following PF
+- option B: start at 30
+- finalise notation cos it looks super confusing right now
+\\
+\\
+\textbf{Appendix: Likelihood functions} \\
+- for real measurements \\
+- for physical measyrements \\
+\\
