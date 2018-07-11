@@ -4,11 +4,14 @@
 \BOOKMARK [1][-]{section*.4}{Noise Map Reconstructions using Quasi-Measurements }{}% 4
 \BOOKMARK [2][-]{section*.5}{Data Association via Born's Rule}{section*.4}% 5
 \BOOKMARK [2][-]{section*.6}{Quasi-Measurements \(\( q \)t\) and Neighbourhood Lengthscales \(r t\)}{section*.4}% 6
-\BOOKMARK [1][-]{section*.7}{Recursive Bayesian SLAM via Particle Filtering}{}% 7
-\BOOKMARK [2][-]{section*.8}{Iterative Likelihood Maximization }{section*.7}% 8
-\BOOKMARK [2][-]{section*.9}{Stratified Particle Weights for Spatially Correlated Noise}{section*.7}% 9
-\BOOKMARK [2][-]{section*.10}{Adaptive Re-Sampling for Slow Temporal Noise Drift}{section*.7}% 10
-\BOOKMARK [1][-]{section*.11}{Numerical Results}{}% 11
-\BOOKMARK [1][-]{section*.12}{Discussion}{}% 12
-\BOOKMARK [1][-]{section*.13}{Conclusion}{}% 13
-\BOOKMARK [1][-]{section*.14}{References}{}% 14
+\BOOKMARK [1][-]{section*.7}{Full Bayesian SLAM for Physical and Quasi-Measurements}{}% 7
+\BOOKMARK [1][-]{section*.8}{Iterative Predictive Estimation for SLAM via Born's Rule}{}% 8
+\BOOKMARK [2][-]{section*.9}{Dynamical Evolution}{section*.8}% 9
+\BOOKMARK [2][-]{section*.10}{Iterative Likelihood Calculations}{section*.8}% 10
+\BOOKMARK [1][-]{section*.11}{Numerical Solutions via a Stratified Particle Filter}{}% 11
+\BOOKMARK [2][-]{section*.12}{Adaptive Re-Sampling for Slow Temporal Noise Drift}{section*.11}% 12
+\BOOKMARK [1][-]{section*.13}{Numerical Results}{}% 13
+\BOOKMARK [1][-]{section*.14}{Discussion}{}% 14
+\BOOKMARK [1][-]{section*.15}{Conclusion}{}% 15
+\BOOKMARK [1][-]{section*.16}{Recursive Bayesian SLAM Update Equation}{}% 16
+\BOOKMARK [1][-]{section*.17}{References}{}% 17

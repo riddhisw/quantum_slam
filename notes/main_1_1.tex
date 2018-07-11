@@ -23,16 +23,16 @@ x_t & := \begin{bmatrix}
 \subsection{Sensing Qubit Control ($\pose{t}$)}
 Over a sequence of measurements, the changing availability of the sensing qubit defines a control trajectory on the grid, given as $\{u_{t}\}_{1:t:T}$. This trajectory is not a continuous path, but resembles hopping on the grid. This trajectory arises from two assumptions: (a) that only one qubit can involved in a sensing measurement at one time, and (b) the availability of a qubit for sensing changes with time i.e. a qubit is released and absorbed into computations. Imperfections in the control are seen as uncertainty in the classical noise field relative to the physical grid and are modelled as jitter in the knowledge of a qubit position. Physically, this arises from weak time domain jitter in the noise field and /or imprecision in technical specifications of a hardware device. We model this as white, Gaussian zero mean input `process' noise, $w_t$. The resulting dynamical model for the position of the sensing qubit, $\pose{t}$ is:
 \begin{align}
-\pose{t} = u_{t-1} + w_t, \quad w_t \sim \mathcal{N}(\mu_w, \sigma_w^2 \mathbb{I}) \quad \forall t
+\pose{t} = u_{t-1} + w_t, \quad w_t \sim \mathcal{N}(\mu_w, \sigma_w^2 \mathbb{I}) \quad \forall t \label{eqn:physetting:1}
 \end{align} In our notation, we reserve the index, $j_t$, to label the node where a physical measurement is performed, with the Euclidean position coordinates of the node $j_t$ are given by $\pose{t}$.
 
 \subsection{Spatio-Temporal Dephasing Noise ($\map{t}$)}
 
 As observed in literature, the probability of observing a $0$ or a $1$ measurement on a single qubit is given by Born's rule. In the limit of measuring every qubit on the grid an infinite number of times (either by running parallel experiments or letting $T \to \infty$ for time-invariant noise fields), we know that the histogram of physical measurements on each qubit will yield a sample probability that converges to the true Born probability for any pair $(j_t,t)$. Let $\mval{j_t}{t}$ denote a  dephasing noise value corresponding to the relative stochastic phase between qubit states at the node $j_t$, and $\pmsmt{j_t}{t}$, the outcome of a Ramsey measurement on a qubit at the node $j_t$. Then, the true dephasing noise field over all nodes is the state vector $ \map{t}:=\{\mval{k}{t} \}, \quad \forall k \in [1,N]$. Then the sample probability for seeing the qubit in the  $\pmsmt{j_t}{t}=1$ state is obtained in the large data limit for any $(j_t, t)$ pair as: \\
 \begin{align}
-\hat{P}_\infty(\pmsmt{j_t}{t}=1|I)^{(j_t)} & = \cos^2(\frac{\mval{j_t}{t}}{2}), \quad \forall j_t \in [0, N], t \in [0, T] \label{eqn:born_singlequbit}
+\hat{P}_\infty(\pmsmt{j_t}{t}=1|I)^{(j_t)} & = \cos^2(\frac{\mval{j_t}{t}}{2}), \quad \forall j_t \in [0, N], t \in [0, T] \label{eqn:physetting:born_singlequbit}
 \end{align}
-\cref{eqn:born_singlequbit} provides a link between experimental observations and the state variable of interest, namely, the noise field. However, unlike a classical mapping problem, we cannot observe the noise field using a `measurement scan' - namely, that a single measurement procedure reveals information about the noise field only at the node $j_t$, and is not comparable, for example, to a collection of data values received from a classical environmental scanning devices (e.g. using a visual laser scan or sonar). \\
+\cref{eqn:physetting:born_singlequbit} provides a link between experimental observations and the state variable of interest, namely, the noise field. However, unlike a classical mapping problem, we cannot observe the noise field using a `measurement scan' - namely, that a single measurement procedure reveals information about the noise field only at the node $j_t$, and is not comparable, for example, to a collection of data values received from a classical environmental scanning devices (e.g. using a visual laser scan or sonar). \\
 \\
 In the next section, we develop techniques to allow us to use the measurement information obtained at $j_t$ to infer some information about the dephasing noise field experienced by the neighbouring qubits around $j_t$.  
 
@@ -48,27 +48,27 @@ With the observations mentioned above, we proxy the classical environmental scan
 \subsection{Data Association via Born's Rule}
 
 
-Since the Born rule must be satisfied irrespective of the inference procedure, we assert that the data association step is simply the inversion of the Born rule in \cref{eqn:born_singlequbit} using the sample probability function defined in \cref{eqn:samplebornprob} for measuring the `1' qubit state:
+Since the Born rule must be satisfied irrespective of the inference procedure, we assert that the data association step is simply the inversion of the Born rule in \cref{eqn:physetting:born_singlequbit} using the sample probability function defined in \cref{eqn:samplebornprob} for measuring the `1' qubit state:
 \begin{align}
-\hat{M}_t^{(k)} &:= \cos^{-1}\left( 2\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right) \label{eqn:mapdatassoc:2} \\
+\hat{M}_t^{(k)} &:= \cos^{-1}\left( 2\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right) \label{eqn:physetting:mapdatassoc:2} \\
 & \forall \quad  k \in \{j_t, \qset{q}{j_t q, t } \}, \nonumber 
 \end{align} where the index $j_t$  is fixed by the location of the physical measurement at the sensing qubit  given by $\pose{t}$. The function  $\hat{M}_t^{(k)}$ theoretically prescribes how a noise map should be updated at $t$ if $\pose{t}, \rstate{t}, z_t$ are all given, and $\map{t-1}$ is available from the previous time step. The term inside the cosine, $\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}}$ can be approximated by \cref{eqn:samplebornprob} when the noise field is $\map{t}$ slowly drifting with respect to $t$, and the approximation is exact for the invariance condition $\map{t} = \map{t-1}$.\\
 \\
 While the previous equation enables us to update a single value of the noise map, we now introduce the concept of `quasi-measurements' to define a small neighbourhood around the sensing qubit over which noise field information can be `smeared'. Unlike physical measurements taken on a qubit, quasi-measurements are simulated measurements, where the measurement outcome depends on the smearing of the map estimate at node $j_t$ over its neighbourhood. A single physical measurement and its set of associated quasi-measurements are all treated an equal footing - this set of data collectively defines the classical equivalent of `scanning' the environment at $t$. The details of how to generate a quasi-measurement are reserved in the next sub-section. At present, we define  a sample probability function defined in \cref{eqn:samplebornprob} using both physical measurements ($\pmsmt{j_t}{t}$) and quasi-measurements ($\qmsmt{j_t}{t}$) at a node, $j_t$. The sample probability function estimates the Born probability for measuring an `up' ($1$) qubit state at the node $j_t$ is:
 \begin{align}
 \probest{}{&\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} \nonumber \\ 
-&=  \frac{1}{|\tau^{(j_t)}_t|}\sum_{i \in \tau^{(j_t)}_t} \pmsmt{j_t}{i} + \frac{\lambda^{|\tau^{(j_t)}_t|}}{|\beta^{(j_t)}_t|}\sum_{i \in \beta^{(j_t)}_t } \qmsmt{j_t}{i}  \label{eqn:samplebornprob} \\ 
+&=  \frac{1}{|\tau^{(j_t)}_t|}\sum_{i \in \tau^{(j_t)}_t} \pmsmt{j_t}{i} + \frac{\lambda^{|\tau^{(j_t)}_t|}}{|\beta^{(j_t)}_t|}\sum_{i \in \beta^{(j_t)}_t } \qmsmt{j_t}{i}  \label{eqn:physetting:samplebornprob} \\ 
 \probest{}{&\{0\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} \nonumber \\
 &= 1 - \probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} \\
-\tau^{(j_t)}_t , \beta^{(j_t)}_t & \subseteq [1, t] \label{eqn:msmtcountset:1}  \\
-\lambda & \in (0,1) \label{eqn:forgettingfactor} 
-\end{align} We recall that the index $j_t$  on the right hand side of \cref{eqn:samplebornprob} denotes the location of the physical measurement at the sensing qubit given by $\pose{t}$. For the sample probability function at the node $j_t$, we let $\tau^{(j_t)}_t $ be the set of $t$-indices for physical measurements at $j_t$, and $ \beta^{(j_t)}_t $ be the set of $t$-indices for quasi-measurements at $j_t$, over the entire record of $[1, t]$ sensing measurements. In \cref{eqn:samplebornprob}, the first term is the sample probability  implied by a total of $|\tau^{(j_t)}_t|$ physical measurements performed on the qubit at node $j_t$; whereas the second term is the sample probability  implied by a total of $|\beta^{(j_t)}_t|$ quasi-measurements. The utility of quasi-measurements at $j_t$ is negligible if the qubit at $j_t$ is physically measured many times. We set a global forgetting factor, $\lambda$, such that the contribution to sample probability function due to a quasi-measurement at $q$ is negligible for high $|\tau^{(j_t)}_t|$ regimes. \\
+\tau^{(j_t)}_t , \beta^{(j_t)}_t & \subseteq [1, t] \label{eqn:physetting:msmtcountset:1}  \\
+\lambda & \in (0,1) \label{eqn:physetting:forgettingfactor} 
+\end{align} We recall that the index $j_t$  on the right hand side of \cref{eqn:physetting:samplebornprob} denotes the location of the physical measurement at the sensing qubit given by $\pose{t}$. For the sample probability function at the node $j_t$, we let $\tau^{(j_t)}_t $ be the set of $t$-indices for physical measurements at $j_t$, and $ \beta^{(j_t)}_t $ be the set of $t$-indices for quasi-measurements at $j_t$, over the entire record of $[1, t]$ sensing measurements. In \cref{eqn:physetting:samplebornprob}, the first term is the sample probability  implied by a total of $|\tau^{(j_t)}_t|$ physical measurements performed on the qubit at node $j_t$; whereas the second term is the sample probability  implied by a total of $|\beta^{(j_t)}_t|$ quasi-measurements. The utility of quasi-measurements at $j_t$ is negligible if the qubit at $j_t$ is physically measured many times. We set a global forgetting factor, $\lambda$, such that the contribution to sample probability function due to a quasi-measurement at $q$ is negligible for high $|\tau^{(j_t)}_t|$ regimes. \\
 \\
-\cref{eqn:msmtcountset:1} states that the counting sets, $\tau^{(j_t)}_t, \beta^{(j_t)}_t$ are subsets of the $t$-indices over $[1,t]$. We state two important properties of these subsets below:
+\cref{eqn:physetting:msmtcountset:1} states that the counting sets, $\tau^{(j_t)}_t, \beta^{(j_t)}_t$ are subsets of the $t$-indices over $[1,t]$. We state two important properties of these subsets below:
 \begin{align}
-\tau^{(j_t)}_t \cap \beta^{(j_t)}_t & \equiv \emptyset , \quad\forall j_t \in N, \forall t \in T \label{eqn:msmtcountset:2} \\
-Nt & \geq \sum_{j_t=1}^{N} |\tau^{(j_t)}_t| + |\beta^{(j_t)}_t| , \quad \forall t \in T \label{eqn:msmtcount} 
-\end{align} \cref{eqn:msmtcountset:2}  specifies that one cannot associate a physical and a quasi-measurement for a node at $j_t$ at the same $t$, namely,  $\tau^{(j_t)}_t, \beta^{(j_t)}_t$ do not overlap. The total number of physical and quasi-measurements generated over the entire grid and over an entire sensing procedure until $t$ is therefore $\leq Nt$. If all neighborhoods encompass all nodes on grid over the entire sensing procedure, then equality holds in \cref{eqn:msmtcount}. \\
+\tau^{(j_t)}_t \cap \beta^{(j_t)}_t & \equiv \emptyset , \quad\forall j_t \in N, \forall t \in T \label{eqn:physetting:msmtcountset:2} \\
+Nt & \geq \sum_{j_t=1}^{N} |\tau^{(j_t)}_t| + |\beta^{(j_t)}_t| , \quad \forall t \in T \label{eqn:physetting:msmtcount} 
+\end{align} \cref{eqn:physetting:msmtcountset:2}  specifies that one cannot associate a physical and a quasi-measurement for a node at $j_t$ at the same $t$, namely,  $\tau^{(j_t)}_t, \beta^{(j_t)}_t$ do not overlap. The total number of physical and quasi-measurements generated over the entire grid and over an entire sensing procedure until $t$ is therefore $\leq Nt$. If all neighborhoods encompass all nodes on grid over the entire sensing procedure, then equality holds in \cref{eqn:physetting:msmtcount}. \\
 
 Each quasi-measurement in the second term of \cref{eqn:samplebornprob} is generated whenever $j_t$ is found to be in the neighborhood of another sensing qubit at any point in sensing procedure until $t$. In the next sub-section, we specify how to generate quasi-measurements by smearing information from a single physical measurements over its neighbourhood. 
 
@@ -83,35 +83,35 @@ For now, we denote the smearing action by an arbitrary function, $\kernel(v_{j_t
 Each quasi-measurement at node $q$, due to the $t^{th}$ sensing measurement performed at node $j_t$, is generated via quantisation procedure introduced in \cite{riddhi_paper_1} and justified in \cite{riddhi_paper_2}. This quantisation procedure is captured in notation as the $\mathcal{Q}(\cdot)$, and represents a binomial coin toss experiment for a single coin and one trial with a probability of success given by the argument of $\mathcal{Q}(\cdot)$. In our case:
 \\
 \begin{align}
-	\qmsmt{q}{t} & :=\mathcal{Q}\left( \cos^2(\frac{\qbornm{q}{(j_tq)}{t}}{2}) \label{eqn:quantiser:2} \right) \\
-	\qbornm{q}{(j_tq)}{t} & :=  (1 - \lambda^{|\tau^{(q)}_{t-1}|})\mest{q}{t-1} + \lambda^{|\tau^{(q)}_{t-1}|}\kernel(v_{j_tq},\rest{j_t}{t}, \mest{j_t}{t}) \label{eqn:quantiser:3}
+	\qmsmt{q}{t} & :=\mathcal{Q}\left( \cos^2(\frac{\qbornm{q}{(j_tq)}{t}}{2}) \label{eqn:physetting:quantiser:2} \right) \\
+	\qbornm{q}{(j_tq)}{t} & :=  (1 - \lambda^{|\tau^{(q)}_{t-1}|})\mest{q}{t-1} + \lambda^{|\tau^{(q)}_{t-1}|}\kernel(v_{j_tq},\rest{j_t}{t}, \mest{j_t}{t}) \label{eqn:physetting:quantiser:3}
 \end{align} \cref{eqn:quantiser:2} is a re-expression of the Born rule to generate quasi-measurements. The smearing of a physical measurement at $j_t$ to yield map information at node $q$ is captured in \cref{eqn:quantiser:3}. The first term in \cref{eqn:quantiser:3} represents the contribution of the best estimate of the map at $q$ until $t-1$. The $t$ measurement at $j_t$ contributes the second term in \cref{eqn:quantiser:3} where the smearing happens according to a known, a priori $\kernel(v_{j_tq},\rest{j_t}{t}, \mest{j_t}{t})$. In particular,  the kernel can be any sigmoid function that enables one to invoke the continuity assumption in the behaviour of the noise field. At present, we will fully specify \cref{eqn:quantiser:3} by using  a Gaussian function but other choice of sigmoids remain unexplored (see, for details, \cite{ito1992approximation}):
 \begin{align}
-	\kernel(v_{qj_t},\rest{j_t}{t}, \mest{j_t}{t}) &:= \mest{j_t}{t}\exp\left(-v_{qj_t}^2 / (\rest{j_t}{t})^2 \right)  \label{eqn:kernel}
+	\kernel(v_{qj_t},\rest{j_t}{t}, \mest{j_t}{t}) &:= \mest{j_t}{t}\exp\left(-v_{qj_t}^2 / (\rest{j_t}{t})^2 \right)  \label{eqn:physetting:kernel}
 \end{align} \\
-\\ The general form of \cref{eqn:quantiser:3} and the \cref{eqn:kernel} are both somewhat arbitrary. One could attempt to side-step the idea of quasi-measurements by setting the map update for $\mval{q}{t}$ as $\qbornm{q}{(j_tq)}{t}$. However, such an equation would define an update to the state variable that does not to take account of physical measurement data at node $q$ (see for example, the first term of \cref{eqn:samplebornprob}) and does not appear to naturally arise from any optimal inference framework. Since $|\tau^{(q)}_t|$ is the total number of physical measurements on $q$,  a forgetting factor $\lambda^{|\tau^{(q)}_t|}, 0 < \lambda < 1$ means that the influence of quasi-measurements on the node $q$ vanishes as the number of physical measurements accumulate on the node $q$. \cref{eqn:quantiser:2,eqn:quantiser:3,eqn:kernel} enable a full calculation of the quasi-measurements in the second term of \cref{eqn:samplebornprob}. \\ %To implement the smearing action in \cref{eqn:quantiser:3}, we introduce two new terms: first, let $\tau^{(q)}_t$ be a set of $t$ indices that count the number of times a physical measurement is made on $q$, and let $|\tau^{(q)}_t|$ be the total number of physical measurements on $q$. 
+\\ The general form of \cref{eqn:physetting:quantiser:3} and the \cref{eqn:physetting:kernel} are both somewhat arbitrary. One could attempt to side-step the idea of quasi-measurements by setting the map update for $\mval{q}{t}$ as $\qbornm{q}{(j_tq)}{t}$. However, such an equation would define an update to the state variable that does not to take account of physical measurement data at node $q$ (see for example, the first term of \cref{eqn:physetting:samplebornprob}) and does not appear to naturally arise from any optimal inference framework. Since $|\tau^{(q)}_t|$ is the total number of physical measurements on $q$,  a forgetting factor $\lambda^{|\tau^{(q)}_t|}, 0 < \lambda < 1$ means that the influence of quasi-measurements on the node $q$ vanishes as the number of physical measurements accumulate on the node $q$. \cref{eqn:physetting:quantiser:2,eqn:physetting:quantiser:3,eqn:physetting:kernel} enable a full calculation of the quasi-measurements in the second term of \cref{eqn:physetting:samplebornprob}. \\ %To implement the smearing action in \cref{eqn:quantiser:3}, we introduce two new terms: first, let $\tau^{(q)}_t$ be a set of $t$ indices that count the number of times a physical measurement is made on $q$, and let $|\tau^{(q)}_t|$ be the total number of physical measurements on $q$. 
 \\
 The performance of any inference framework using both physical and quasi-measurements depends on two critical factors: (a) estimating the relevant length scales for all $j_t$ neighbourhoods, in the vector $\rstate{t}$, as data is made available and (b) that the design of the kernel function $\kernel$ improves state estimation without introducing a systematic bias to the inference procedure. The two limiting cases - a uniform field and a rapid fluctuating field - are used to numerically simulate and check quasi-measurement framework in \cref{sec:ohfuckresults}.  
 
-\section{Recursive Bayesian SLAM via Particle Filtering}
+\section{Full Bayesian SLAM for Physical and Quasi-Measurements}
  
 We will now outline the recursive Bayesian inference problem for our application and we show that this inference problem can be resolved by iterative likelihood maximization using a particle filter with two sets of particles. The first set of particles represent a set of hypotheses for the true state $x_t$; while the second set of particles cluster around each node, $k$, and represent the distribution of physically relevant length scales, $\rval{k}{t}$. Information from both sets of particles are recombined to give the Bayesian posterior distribution at any $t$. The stratified approach arises as  incorporate the \textit{a priori} data association function by invoking Born's rule; and exploit the continuously varying property of dephasing fields via quasi-measurements. For time-invariant dephasing fields, it is possible to adopt a simple iterative maximum likelihood function without a particle filter, as shown at the end of this section. \\
 \\
 Let $x_t$ be the true state vector and $j_t$ be the node at which a sensing measurement is taken. We will treat physical and quasi-measurements on an equal footing so that the total set of input environmental sensor data is: $z_t := \{\pmsmt{j_t}{t}, \{ \qmsmt{q}{t} \}_{1:q:|\qset{j_t}{t}|}\}$. The next sensing qubit is given by the control $u_t$ and $\mathcal{D}_t$ be the set of controls and datasets over the entire procedure, i.e. $\mathcal{D}_t := \{z_1, u_1, \hdots, z_t \}$.  We will use the subscript ${}_{1:t}$ to denote the entire set of variables until $t$. Under the Markov assumption, the Bayesian prior can be written in terms of transition probability distribution that only depend on the state at the previous time step:
 \begin{align}
-\prob{}{x_{0:t} | u_{0:t}} & := \prob{}{x_{0}} \prod_{t'=1}^{t} \prob{}{x_{t'}| x_{t'-1}, u_{t'-1}  } 
+\prob{}{x_{0:t} | u_{0:t}} & := \prob{}{x_{0}} \prod_{t'=1}^{t} \prob{}{x_{t'}| x_{t'-1}, u_{t'-1}  } \label{eqn:slam:transition:1}
 \end{align} We extend the Markov assumption such that the likelihood depends only on the current state and can be expanded over the entire dataset as:
 \begin{align}
-\prob{}{z_{0:t} | x_{0:t}, u_{0:t}} & := \prod_{t'=0}^{t} \prob{}{z_{t'} | x_{t'}, u_{t'-1} } 
+\prob{}{z_{0:t} | x_{0:t}, u_{0:t}} & := \prod_{t'=0}^{t} \prob{}{z_{t'} | x_{t'}, u_{t'-1} } \label{eqn:slam:likelihood:1}
 \end{align}  Using Bayes Rule,
 \begin{align}
-\prob{}{x_{0:t} | z_{0:t} , u_{0:t}} &:= \frac{\prob{}{x_{0:t} , z_{0:t} | u_{0:t}}}{\int \prob{}{x_{0:t} , z_{0:t} | u_{0:t}} dx_{0:t}}, 
+\prob{}{x_{0:t} | z_{0:t} , u_{0:t}} &:= \frac{\prob{}{x_{0:t} , z_{0:t} | u_{0:t}}}{\int \prob{}{x_{0:t} , z_{0:t} | u_{0:t}} dx_{0:t}}, \label{eqn:slam:bayes:1}
 \end{align} we will state both the prediction and update equations for the inference procedure for the true state, and the approximations under importance sampling techniques that allow numerical solutions  in particle filtering. \\
 \\
 With the definitions stated above, one can obtain the recursive form of Bayes rule at $t$ as:
 \begin{align}
 &\prob{}{x_{0:t} | z_{0:t}, u_{0:t}} \nonumber \\ 
-& = \frac{\prob{}{x_{t}| x_{t-1}, u_{t-1} } \prob{}{z_{t}| x_{t}, u_{t-1} }}{\prob{}{y_{0:t} | y_{0:t-1}}}\prob{}{x_{0:t-1} | z_{1:t-1}, u_{0:t-1}}
+& = \frac{\prob{}{x_{t}| x_{t-1}, u_{t-1} } \prob{}{z_{t}| x_{t}, u_{t-1} }}{\prob{}{y_{0:t} | y_{0:t-1}}}\prob{}{x_{0:t-1} | z_{1:t-1}, u_{0:t-1}} \label{eqn:slam:bayes:2}
 \end{align} Integrating both sides with respect to $\int dx_{0:t-1}$ will yield the one step head prediction and update equations typically seen in Bayesian inference. This integration reduces a multi-dimensional Gaussian over the entire measurement record and state variables to the simpler one step ahead prediction and recursive Bayes update equation.
 % \begin{align}
 % &\prob{}{x_t | \mathcal{D}_t}  \nonumber \\
@@ -121,102 +121,224 @@ The SLAM problem is introduced explicitly, as in \cite{thrun2001probabilistic}, 
  \begin{widetext}
   	\begin{align}
   	&\prob{}{s_t, \map{t}, r_t | \mathcal{D}_t} \nonumber \\
-  	& = \eta_t\prob{}{z_t | s_t, r_t, \map{t}, u_{t-1}} \int \prob{}{ s_t| s_{t-1}, u_{t-1}}  \int \prob{}{ \map{t}|  \map{t-1}} \int \prob{}{ r_t|  r_{t-1}, \map{t-1}} \prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}}  ds_{t-1} d\map{t-1} dr_{t-1}   \label{eqn:slam:7} 
+  	& = \eta_t\prob{}{z_t | s_t, r_t, \map{t}, u_{t-1}} \int \int \int \prob{}{ s_t| s_{t-1}, u_{t-1}}  \prob{}{ \map{t}|  \map{t-1}} \prob{}{ r_t|  r_{t-1}, \map{t-1}} \prob{}{s_{t-1}, r_{t-1}, \map{t-1}| \mathcal{D}_{t-1}}  ds_{t-1} d\map{t-1} dr_{t-1}   \label{eqn:slam:bayes:3} 
   	\end{align} 
-  \end{widetext} In the derivation of \cref{eqn:slam:7}, $\eta_t$ is a unknown normalisation constant and we observe that the effect of sensing qubits does not depend on the map, or the length-scales.  We obtain two Markov transition probabilities, or dynamic models:  $\prob{}{ s_t| s_{t-1}, u_{t-1}}$ for the choice of qubits for sensing, and $\prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}}$ for time evolution of a noise field and the implied evolution of associated length-scales for the system. We separate $\prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}}$ using the product rule and this separates the natural evolution of the environment with any dynamical update we design for the choice of length-scales. This separation yields a natural evolution, $\prob{}{  \map{t}|  r_t, r_{t-1}, \map{t-1}} $,  independent of lengthscales for the system, where the Markov transition probability $\prob{}{ \map{t}|  \map{t-1}}$ is assumed known. The second term, $\prob{}{ r_t|  r_{t-1}, \map{t-1}}$ represents our choice of model for dynamically updating length-scales as the environment evolves.\\
+  \end{widetext} In the derivation of \cref{eqn:slam:bayes:3}, $\eta_t$ is a unknown normalisation constant and we observe that the effect of sensing qubits does not depend on the map, or the length-scales.  We obtain two Markov transition probabilities, or dynamic models:  $\prob{}{ s_t| s_{t-1}, u_{t-1}}$ for the choice of qubits for sensing, and $\prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}}$ for time evolution of a noise field and the implied evolution of associated length-scales for the system. We separate $\prob{}{ r_t, \map{t}|  r_{t-1}, \map{t-1}}$ using the product rule and this separates the natural evolution of the environment with any dynamical update we design for the choice of length-scales. This separation yields a natural evolution, $\prob{}{  \map{t}|  r_t, r_{t-1}, \map{t-1}} $,  independent of lengthscales for the system, where the Markov transition probability $\prob{}{ \map{t}|  \map{t-1}}$ is assumed known. The second term, $\prob{}{ r_t|  r_{t-1}, \map{t-1}}$ represents our choice of model for dynamically updating length-scales as the environment evolves.\\
   \\
-  In the case that $\map{}$ represents a time invariant map in the time domain, we can assume that both $\map{t} = \map{} \forall t$, This logically suggests that $r$ used for the approximation of $\map{}$ should also be time invariant, $r_t = r \forall t$. Hence, going from $t-1$ to $t$ means that the integral over $\map{t-1}$, $r_{t-1}$ will be zero everywhere unless $\map{t}=\map{t-1}, r_t = r_{t-1}$. Under these assumptions for $\map{}, r$ in the time domain, we reduce \cref{eqn:slam:7} a Bayesian inference problem which depends only on the transition probability distribution of the sensing qubit and it directly analogous to the central problem outlined in \cite{thrun2001probabilistic}.\\
+  In the case that $\map{}$ represents a time invariant map in the time domain, we can assume that both $\map{t} = \map{} \forall t$, This logically suggests that $r$ used for the approximation of $\map{}$ should also be time invariant, $r_t = r \forall t$. Hence, going from $t-1$ to $t$ means that the integral over $\map{t-1}$, $r_{t-1}$ will be zero everywhere unless $\map{t}=\map{t-1}, r_t = r_{t-1}$. Under these assumptions for $\map{}, r$ in the time domain, we reduce \cref{eqn:slam:bayes:3} a Bayesian inference problem which depends only on the transition probability distribution of the sensing qubit and it directly analogous to the central problem outlined in \cite{thrun2001probabilistic}.\\
   \\
-  The full inference problem in \cref{eqn:slam:7} is generally intractable due to the high dimensionality over all the maps, $\map{t}$, and associated length-scales. We follow a modified version of the iterative maximum likelihood approach in \cite{thrun2001probabilistic}. The commonality of our approach and \cite{thrun2001probabilistic} is that in both approaches, a deterministic data association $\hat{M}_t^{(k)}$ function exists to update the values of the environmental map if all other state variables are assumed known. The departure of our approach from \cite{thrun2001probabilistic} is that this data association function is prescribed by Born's rule to extend classical techniques for qubit control. In particular, our departure from \cite{thrun2001probabilistic} is that at each time step $t$,  we perform a likelihood calculation and state update for a physical measurement on a sensing qubit, and use this information to do a likelihood calculation over quasi-measurements generated over a neighbourhood. The first procedure enables a map update due to physical measurements, and the second procedure attempts to discover the physical length-scales over which significant variation of noise field is seen.  The substitution of $\hat{M}_t^{(k)}$ into the Bayesian inference equation and the ordering of the iterative calculations are discussed in detail in the next sub-section. An iterative maximum likelihood procedure then forces us to change the structure of weight calculation and resampling for a typical particle filtering algorithm, and these changes are specified in the last sub-section. 
+  The full inference problem in \cref{eqn:slam:bayes:3} is generally intractable due to the high dimensionality over all the maps, $\map{t}$, and associated length-scales. We follow a modified version of the iterative maximum likelihood approach in \cite{thrun2001probabilistic}. This means that we substitute $\hat{M}_t^{(k)}$ into the Bayesian inference equation as discussed in detail in the next section. 
   
-\subsection{Iterative Likelihood Maximization }
+\section{Iterative Predictive Estimation for SLAM via Born's Rule}
+While the full classical SLAM problem may be intractable, we wish to incorporate our \textit{a priori} knowledge of the data association function granted via Born's rule. Substitution of the data association function,  $\hat{M}_t^{(k)}$, forces us to consider a recursive inference procedure where the likelihood calculation and state update is iterative for each new measurement (noise map update) and its associated set of quasi-measurements (length scale update). The rationale for the design and ordering of these iterative calculations are discussed in this section, and the iterative procedure for maximising the likelihood is inspired from \cite{thrun2001probabilistic}.\\
+\\
+As assumed in \cite{thrun2001probabilistic}, a data association $\hat{M}_t^{(k)}$ function exists to update the values of the environmental map if all other state variables are assumed known. The departure of our approach from \cite{thrun2001probabilistic} is that this data association function is prescribed by Born's rule to extend classical techniques for qubit control. In particular, at each time step $t$,  we perform a likelihood calculation and state update for a physical measurement on a sensing qubit, and use this information to do a likelihood calculation over quasi-measurements generated over a neighbourhood. The first procedure enables a map update due to physical measurements, and the second procedure attempts to discover the physical length-scales over which significant variation of noise field is seen.  An iterative maximum likelihood procedure then forces us to change the structure of weight calculation and resampling for a typical particle filtering algorithm, and these changes are specified in the last section.
+  
 For a measurement at $t$ on the $j_t$ qubit, we  substitute  $ \map{t} \to \hat{M}_t \equiv \hat{M}_t^{(k)}$,  $ \forall k \in \{j_t, \qset{j_t}{t}\}$ into the Bayesian recursive equation. This substitution is allowed as $f_t \equiv M_t$ under Born's rule for the ideal case when our inference procedure allows us to perfectly learn the noise field from (infinite) data. Given $x_{t-1}, \pose{t}, \rstate{t}$, the function $\hat{M}_t$ is a deterministic update of the noise map based on physical and quasi-measurement data. This means that:
 \begin{align}
-	\prob{}{ \hat{M}_t| \hat{M}_{t-1}}  \to \delta (M_t - \hat{M}_t| \hat{M}_{t-1}),
+	\prob{}{ \hat{M}_t| \hat{M}_{t-1}}  \to \delta (M_t - \hat{M}_t| \hat{M}_{t-1}),  \cref{eqn:slam:ilm:1}
 \end{align} and the integral over the space of noise maps disappears. Since $\hat{M}_t$ depends only on the previous state, the Markov assumptions of our model are preserved. The substitution of the data association function gives the Bayesian recursion as:
 \begin{widetext}
 \begin{align}
 \prob{}{&\pose{t}, \rstate{t}, \hat{M}_{t}| \mathcal{D}_{t-1}} \nonumber \\
-& =  \eta_t\prob{}{z_t | \pose{t}, \rstate{t}, \hat{M}_t| \hat{M}_{t-1}, u_{t-1}}  \int \prob{}{ \pose{t}| \pose{t-1}, u_{t-1}} \int \prob{}{ \rstate{t}|  \rstate{t-1}, \hat{M}_t| \hat{M}_{t-1}} \prob{}{\pose{t-1}, \rstate{t-1}, \hat{M}_{t-1}| \mathcal{D}_{t-1}}  d\pose{t-1} d\rstate{t-1} 
+& =  \eta_t\prob{}{z_t | \pose{t}, \rstate{t}, \hat{M}_t| \hat{M}_{t-1}, u_{t-1}}  \int \prob{}{ \pose{t}| \pose{t-1}, u_{t-1}} \int \prob{}{ \rstate{t}|  \rstate{t-1}, \hat{M}_t| \hat{M}_{t-1}} \prob{}{\pose{t-1}, \rstate{t-1}, \hat{M}_{t-1}| \mathcal{D}_{t-1}}  d\pose{t-1} d\rstate{t-1} \cref{eqn:slam:ilm:2}
 \end{align}
-\end{widetext} The iterative calculation proceeds as follows. The first part of the calculation is computing a likelihood with respect to the physical measurement only. Upon receiving a physical measurement, $\pmsmt{j_t}{t}$, at $t$, the likelihood computation is given by:
+\end{widetext} 
+ \subsection{Dynamical Evolution}
+ We state simple dynamical evolution for the state vector under the simplified approach to SLAM. Since the noise field transition distribution is deterministic, the transition distribution for length-scales is just the error in modelling a continuously varying field using sigmoids. We assert the distribution of true errors is white, Gaussian with a non-zero mean and variance:
+ \begin{align}
+ \prob{}{ r_t^{(k)} |  r_{t-1}^{(k)} , \hat{M}_{t-1}}  & \propto    \prob{}{ \hat{M}_{t} |  \hat{M}_{t-1}}  \forall k \in N \label{eqn:slam:dynamics:r:1} \\
+ & \propto \prob{}{ f_t - \hat{M}_{t} |  \hat{M}_{t-1}} \label{eqn:slam:dynamics:r:2}\\
+ & = \mathcal{N}(\mu_r, \sigma^2_r),\forall k \in N \label{eqn:slam:dynamics:r:3}
+ \end{align}\\
+ Similarly, the position of the sensing qubit is given by \cref{eqn:physetting:1}. The position state vector deviates from the ideal control only due to the white, Gaussian zero mean jitter arising from imperfect knowledge of the qubit position relative to the field. The model in \cref{eqn:physetting:1}  implies:
+ \begin{align}
+ \prob{}{ \pose{t}| \pose{t-1}, u_{t-1}} = \prob{}{ w_t} = \mathcal{N}(\mu_w, \sigma^2_w) \forall t \label{eqn:slam:dynamics:process}
+ \end{align} 
+ This gives the transition probability distribution for the state vector as:
+ \begin{align}
+ \prob{}{x_{t}| x_{t-1}, u_{t-1}} = \mathcal{N}(\mu_r + \mu_w, \sigma^2_w + \sigma^2_r) \label{eqn:slam:dynamics:full}
+ \end{align}
+ 
+\subsection{Iterative Likelihood Calculations}
+The iterative calculation proceeds as follows. The first part of the calculation is computing a likelihood with respect to the physical measurement only. Upon receiving a physical measurement, $\pmsmt{j_t}{t}$, at $t$, the likelihood computation is given by:
 \begin{align}
 \prob{}{\pmsmt{j_t}{t}&=d | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1}} \nonumber \\
  = & \frac{\rho_0}{2} \nonumber \\
 & + \rho_0 \left(  2\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right)  \delta(d-1) \nonumber \\
-& - \rho_0 \left(  2\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right) \delta(d), \label{slam"likleihood:physical} \\
-\rho_0 :=& \erf\left( \frac{2b}{\sqrt{2R}}\right) + \frac{\sqrt{2R}}{2b}\frac{\exp^{-\left( \frac{2b}{\sqrt{2R}}\right)^2}}{\sqrt{\pi}} - \frac{1}{\sqrt{\pi}} \frac{\sqrt{2R}}{2b}, \\
-&d \in {0,1}, \quad b \equiv 1/2. 
-\end{align} The form of the likelihood  in \cref{slam"likleihood:physical} is given in \cite{riddhissensorpaper} and essentially represents the distribution for a coin-toss experiment representative of projective measurement outcome on a qubit, when our knowledge of the bias on the coin is uncertain. In certain regimes, this distribution approaches that of a truncated Gaussian distribution - namely, that measurement errors for our application can at most be resolved for one bit flip. This likelihood enables us to score or weight our hypothesis, $\hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}$ for the true noise map, $f_t$, based on physical data. \\
+& - \rho_0 \left(  2\probest{}{\{1\} | \pose{t}, \rstate{t}, x_{t-1}, u_{t-1}, \mathcal{D}_{t-1}} - 1 \right) \delta(d), \label{eqn:slam:ilm:3} \\
+\rho_0 :=& \erf\left( \frac{2b}{\sqrt{2R}}\right) + \frac{\sqrt{2R}}{2b}\frac{\exp^{-\left( \frac{2b}{\sqrt{2R}}\right)^2}}{\sqrt{\pi}} - \frac{1}{\sqrt{\pi}} \frac{\sqrt{2R}}{2b}, \label{eqn:slam:ilm:4} \\
+&d \in {0,1}, \quad b \equiv 1/2.  \label{eqn:slam:ilm:5}
+\end{align} The form of the likelihood  in \cref{eqn:slam:ilm:3} is given in \cite{riddhissensorpaper} and essentially represents the distribution for a coin-toss experiment representative of projective measurement outcome on a qubit, when our knowledge of the bias on the coin is uncertain. In certain regimes, this distribution approaches that of a truncated Gaussian distribution - namely, that measurement errors for our application can at most be resolved for one bit flip. This likelihood enables us to score or weight our hypothesis, $\hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}$ for the true noise map, $f_t$, based on physical data. \\
 \\
 The second part of the likelihood calculation proceeds by scoring or weighting hypotheses about the length-scales, $\rstate{t}$, based on quasi-measurements generated over a neighbourhood. For a physical measurement, $\pmsmt{j_t}{t}$, at $t$, we consider all $q$ qubits in a given hypothesis about the true neighbourhood, $\qset{j_t}{t}$, for all $q \in \qset{j_t}{t}$. For each quasi-measurement on the $q$ node, we compute:
 \begin{align}
 \prob{}{ \qmsmt{q}{t}&|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 }} \nonumber \\
-& = \frac{1}{\sqrt{2\pi \Sigma}} \exp \left( -\frac{( \qbornm{q}{(j_tq)}{t} - \mest{q}{t}|\mest{q}{t-1} - \mu_f )^2}{2 \Sigma }\right) \label{slam"likleihood:quasi}  \\
-\mathrm{with } & \lim_{\tau_t^{(q)} \to \infty} \qbornm{q}{(j_tq)}{t} - \mest{q}{t}|\mest{q}{t-1}   = \mu_f.
-\end{align} The term $\mest{q}{t}|\mest{q}{t-1} $ merely denotes the most recent map estimate at the neighbour $q$. The map estimate at $q$ is compared with the predicted map information from the smearing action, $\qbornm{q}{(j_tq)}{t}$. The difference between these two terms is generally large if the length scale of the neighbour is incorrect  (noisy $ \qbornm{q}{(j_tq)}{t}$) or if the accumulation of real and quasi measurements at $q$ are insufficient to yield a reasonable estimate of the map at $t-1$  (noisy $ \mest{q}{t}|\mest{q}{t-1} $).  As the number of physical measurements accumulate on neighbouring qubits, the distribution in \cref{slam"likleihood:quasi} approaches a Gaussian  distribution with a true mean $\mu_f$ mean a covariance matrix $\Sigma$ that reflects the distribution of true errors from using a sigmoid approximation in modeling a continuously varying noise field.\\
+& = \frac{1}{\sqrt{2\pi \Sigma}} \exp \left( -\frac{( \qbornm{q}{(j_tq)}{t} - \mest{q}{t}|\mest{q}{t-1} - \mu_f )^2}{2 \Sigma }\right) \label{eqn:slam:ilm:6:quasi}  \\
+\mathrm{with } & \lim_{\tau_t^{(q)} \to \infty} \qbornm{q}{(j_tq)}{t} - \mest{q}{t}|\mest{q}{t-1}   = \mu_f. \label{eqn:slam:ilm:7}
+\end{align} The term $\mest{q}{t}|\mest{q}{t-1} $ merely denotes the most recent map estimate at the neighbour $q$. The map estimate at $q$ is compared with the predicted map information from the smearing action, $\qbornm{q}{(j_tq)}{t}$. The difference between these two terms is generally large if the length scale of the neighbour is incorrect  (noisy $ \qbornm{q}{(j_tq)}{t}$) or if the accumulation of real and quasi measurements at $q$ are insufficient to yield a reasonable estimate of the map at $t-1$  (noisy $ \mest{q}{t}|\mest{q}{t-1} $).  As the number of physical measurements accumulate on neighbouring qubits, the distribution in \cref{eqn:slam:ilm:6:quasi} approaches a Gaussian  distribution with a true mean $\mu_f$ mean a covariance matrix $\Sigma$ that reflects the distribution of true errors from using a sigmoid approximation in modeling a continuously varying noise field.\\
 \\ The likelihoods over physical and quasi measurements at a single $t$ can be multiplied to yield the overall likelihood:
 \begin{align}
 	\prob{}{ z_t& | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 } } \nonumber \\
 	&= \prob{}{\pmsmt{j_t}{t}=d | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1}} \quad  \times \nonumber \\
-	& \prod_{\forall q \in \qset{j_t}{t}} \prob{}{ \qmsmt{q}{t}|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 }}
+	& \prod_{\forall q \in \qset{j_t}{t}} \prob{}{ \qmsmt{q}{t}|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 }} \label{eqn:slam:ilm:8}
 \end{align} where the product of all measurements reflects that we treat physical and quasi-measurements on  an equal footing. The product invokes the same assumptions as in the derivation of a recursive Bayesian update equation, namely, the independence of the true noise field, sensing measurements, and controls. In particular, the physical measurement has no impact on the true noise map and the noise map and the choice of sensing qubits are independent. These assumptions mean that the true error from a sigmoid approximation of the noise field are spatially uncorrelated. Further, the design of the quasi-measurement procedure ensures that in the limit where infinite data is collected on every node, the full inference procedure yields an unbiased estimator of the true noise field. \\
 \\
 The inter-leaving part of the calculation comes from the fact that $ \prob{}{\pmsmt{j_t}{t}=d | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1}}$ must be used to update the map value $\hat{M}_t^{(j_t)}$ at $j_t$  before the smearing action in the neighbourhood is computed and scored via $\prob{}{ \qmsmt{q}{t}|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 }}$. In particular, $ \qbornm{q}{(j_tq)}{t}$ takes the updated $\mest{j_t}{t}$ as an input and smears this information over the neighbourhood of all $q$ qubits. The product of likelihoods for all $q$ qubits in the neighbourhood gives us the best estimator of the length-scales, namely, in the second step, we update $\rest{j_t}{t} | \rest{j_t}{t-1} $ as an estimator of the true length-scale $\rstate{t}$. \\
 
-This iterative likelihood calculation and inter-leaved state update procedure leads us to consider a particle filter with two different sets of particles - denoted as an $\alpha$ set and a $\beta$ set of particles respectively. Each particle represents a hypothesis about a true state at a given node, and these hypotheses are weighted by likelihood functions for that node. Ideally, a higher weight / likelihood corresponds to a particle closer to the true state $x_t$ at $t$ given a physical measurement on the $j_t$ node and given all past data.  The aggregate result is that $\alpha$ particles combine information about the most likely noise field given physical measurements, and $\beta$ particles combine information about the most likely length-scales for approximating true noise, based on physical and quasi-measurements. In particular, $\alpha$ particles are weighted by the first likelihood, $\prob{}{\pmsmt{j_t}{t}=d | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1}}$; whereas $\beta$ particles are weighted by $\prob{}{ \qmsmt{q}{t}|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}^{(j_t)}, u_{t-1 }}$. Hence, $\beta$ particles represent a distribution of $r_t$ and are constrained only if the associated node is measured physically. The details for ordinary particle filtering and details about the modifications for our iterative likelihood maximisation approach is the topic of the next sub-section.
+This iterative likelihood calculation and inter-leaved state update procedure leads us to consider a particle filter with two different sets of particles - denoted as an $\alpha$ set and a $\beta$ set of particles respectively. Each particle represents a hypothesis about a true state at a given node, and these hypotheses are weighted by likelihood functions for that node. Ideally, a higher weight / likelihood corresponds to a particle closer to the true state $x_t$ at $t$ given a physical measurement on the $j_t$ node and given all past data.  The aggregate result is that $\alpha$ particles combine information about the most likely noise field given physical measurements, and $\beta$ particles combine information about the most likely length-scales for approximating true noise, based on physical and quasi-measurements. In particular, $\alpha$ particles are weighted by the first likelihood, $\prob{}{\pmsmt{j_t}{t}=d | \pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}, u_{t-1}}$; whereas $\beta$ particles are weighted by $\prob{}{ \qmsmt{q}{t}|\pose{t}, \rstate{t}, \hat{M}_t^{(j_t)}| \hat{M}_{t-1}, u_{t-1 }}$. Hence, $\beta$ particles represent a distribution of $r_t$ and are constrained only if the associated node is measured physically. The details for ordinary particle filtering and details about the modifications for our iterative likelihood maximisation approach is the topic of the next section.
 
-\subsection{Stratified Particle Weights for Spatially Correlated Noise}
+\section{Numerical Solutions via a Stratified Particle Filter}
 
 A particle filter numerically approximates a posterior distribution using particles, where each particle is a hypothesis of a true state. As measurement information is received, the weight-calculation and resampling steps of a particle filter refer to \textit{a priori} design of how particles are weighted as being likely or not likely (weight calculation); and the way in which the diversity of the particles is maintained throughout the procedure so that state estimation remains robust and unbiased (resampling). Sophisticated weight calculation and re-sampling schemes exist in literature (e.g., see a review in \cite{li2015resampling}); however, a standard starting point is to use an importance sampling framework. In importance sampling, one chooses \textit{a priori} a so-called importance distribution, denoted $q(\cdot)$, and a set of weights, $W(\cdot)$ to approximate the joint posterior as:
 \begin{align}
-\prob{}{x_{0:t} , z_{0:t} |u_{0:t}} &:= W(x_{0:t} , z_{0:t}) q(x_{0:t} | z_{0:t}, u_{0:t}) \label{eqn:pf:is:weightupdate}
+\prob{}{x_{0:t} , z_{0:t} |u_{0:t}} &:= W(x_{0:t} , z_{0:t}) q(x_{0:t} | z_{0:t}, u_{0:t}) \label{eqn:slam:PF:1}
 \end{align} The choice of the importance distribution is such that it must cover the posterior. We assume that the important distribution can be written in Markov (recursive) form, with a transition probability, $q^*(x_{0:t} |x_{0:t-1})$. Under these assumptions, one obtains a recursive equation for the weights:
 \begin{align}
 & W(x_{0:t} , z_{0:t})  \nonumber \\
-&= \frac{\prob{}{z_{t} | x_{t}, u_{t-1}}  \prob{}{x_{t}| x_{t-1}, u_{t-1} }}{q^*(x_{0:t} |x_{0:t-1})} W(x_{0:t-1} , z_{0:t-1}) \\
-&q^*(x_{0:t} |x_{0:t-1}) := \frac{q(x_{0:t} | z_{0:t}, u_{0:t})}{q(x_{0:t-1} | z_{0:t-1}, u_{0:t-1})}
-\end{align} For any particular choice of $q^*(x_{0:t} |x_{0:t-1})$, the approximate representation of the posterior over $P$ samples  (particles) is given by a weighted collection of true states, where the weights for a given realisation of a true state represented by the $p$-th particle are given by  $W(x_{0:t} , z_{0:t})^{(p)}$ at $t$.  In the above, the weights are normalised over all $P$ particles at each $t$ such that $\sum_{p = 1}^{P} W(x_{0:t} , z_{0:t})^{(p)} = 1$. Under the importance sampling framework, for the choice of $q^*(x_{0:t} |x_{0:t-1}) \equiv \prob{}{x_{t}| x_{t-1}, u_{t-1}}$, the recursive weight update of \cref{eqn:pf:is:weightupdate} depends only on the likelihood function.\\
+&= \frac{\prob{}{z_{t} | x_{t}, u_{t-1}}  \prob{}{x_{t}| x_{t-1}, u_{t-1} }}{q^*(x_{0:t} |x_{0:t-1})} W(x_{0:t-1} , z_{0:t-1})  \label{eqn:slam:PF:2} \\
+&q^*(x_{0:t} |x_{0:t-1}) := \frac{q(x_{0:t} | z_{0:t}, u_{0:t})}{q(x_{0:t-1} | z_{0:t-1}, u_{0:t-1})} \label{eqn:slam:PF:3}
+\end{align} For any particular choice of $q^*(x_{0:t} |x_{0:t-1})$, the approximate representation of the posterior over $P$ samples  (particles) is given by a weighted collection of true states, where the weights for a given realisation of a true state represented by the $p$-th particle are given by  $W(x_{0:t} , z_{0:t})^{(p)}$ at $t$.  In the above, the weights are normalised over all $P$ particles at each $t$ such that $\sum_{p = 1}^{P} W(x_{0:t} , z_{0:t})^{(p)} = 1$. Under the importance sampling framework, for the choice of $q^*(x_{0:t} |x_{0:t-1}) \equiv \prob{}{x_{t}| x_{t-1}, u_{t-1}}$, the recursive weight update of \cref{eqn:slam:PF:1} depends only on the likelihood function. 
 \\
-In our application, we incorporate a stratified approach using two particle sets, namely, the set of $\alpha \in \{1, \hdots ,P_\alpha\}$ particles, and for each $\alpha$ and a node $k$, a set of $\beta_\alpha \in \{1, \hdots ,P_\beta\}$ particles. Here, the distribution of $\{\alpha \}$  represents the distribution over the noise map over the entire grid, and the average uncertainty in the qubit node position relative to the grid after a control has been applied. For each $\alpha$, the distribution of $\{ \beta_\alpha \}^{(k)} $ is the best estimate of the length scales at node $k$. For a specific $j_t$, we access the $\beta_\alpha$ particle set, $\{ \beta_\alpha \}^{(k=j_t)} $, once for each hypothesis of the $\alpha$ particle state. \\
+\\
+We incorporate a stratified approach using two particle sets, namely, the set of $\alpha \in \{1, \hdots ,P_\alpha\}$ particles, and for each $\alpha$ and a node $k$, a set of $\beta_\alpha \in \{1, \hdots ,P_\beta\}$ particles. Here, the distribution of $\{\alpha \}$  represents the distribution over the noise map over the entire grid, and the average uncertainty in the qubit node position relative to the grid after a control has been applied. For each $\alpha$, the distribution of $\{ \beta_\alpha \}^{(k)} $ is the best estimate of the length scales at node $k$. For a specific $j_t$, we access the $\beta_\alpha$ particle set, $\{ \beta_\alpha \}^{(k=j_t)} $, once for each hypothesis of the $\alpha$ particle state. \\
 \\
 Under the importance sampling framework, the weight update only depends on the likelihood. We perform the following normalised weight calculations over both particle sets in order of computation(tilde represents raw weights). First, we compute the $\alpha$ normalised particle weights based on the physical measurement only:
 \begin{align}
-\tilde{W}_t^{(j_t, \alpha)}& \leftarrow \prob{}{\pmsmt{j_t}{t}=d | \pose{t}^{(\alpha)}, \rstate{t}^{(\alpha)}, \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1}, u_{t-1 }} \\
-W_t^{(j_t, \alpha)} &:= \frac{\tilde{W}_t^{(j_t, \alpha)}}{\eta^{(j_t, \alpha)}}, \quad \eta^{(j_t, \alpha)} := \sum_{\alpha = 1}^{P_{\alpha}} \tilde{W}_t^{(j_t, \alpha)}  
-\end{align} 
-Then, we compute the likelihood for the smearing action over the neighbourhood, for each $\beta$ particle:
+&\tilde{W}_t^{( \alpha | j_t)} \nonumber \\
+& = \prob{}{\pmsmt{j_t}{t}=d | \pose{t}^{(\alpha)}, \rstate{t}^{(\alpha)}, \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1}, u_{t-1 }} W_{t-1}^{( \alpha | j_{t-1})}  \label{eqn:slam:PF:4:alpha:raw}\\
+&W_t^{( \alpha | j_t)} := \frac{\tilde{W}_t^{( \alpha | j_t)}}{\eta^{( \alpha | j_t)}}, \quad \eta^{( \alpha | j_t)} := \sum_{\alpha = 1}^{P_{\alpha}} \tilde{W}_t^{( \alpha | j_t)}  \label{eqn:slam:PF:5:alpha:norm}
+\end{align} For the measurement at $j_t$, we need access to the second layer - namely the $\beta_\alpha$ set of particles for each $\alpha$.  Accessing this $\beta_\alpha$ particle set at any node $k$ means that the posterior length-scale from the previous time step, $\rest{k}{t-1}$, is used to generate a uniform distribution of  $P_\beta$ particles, over the interval $\mathcal{U}(0, L_t)$. Here, $L_t$ represents the variation in potential length-scales that takes account of the maximal physical separation of any two qubits in the hardware, ($d_{\mathrm{grid}}$). In the limit when the variance of posterior particle weights are high, the smearing action should be small so that it does not introduce a systematic bias in the filtering procedure. (We will provide an expression for $L_t$ as a function of the variance of the final weights of the particle filter in due course.) For each $\beta_\alpha$ particle compute the likelihood for the smearing action over the neighbourhood:
 \begin{align}
-	&\mval{j_t, \alpha}{t}  \leftarrow \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1} \\ 
-	&\tilde{W}_t^{(j_t, \alpha, \beta_\alpha)}  \leftarrow \prod_{\forall q \in \qset{j_t, \alpha, \beta_\alpha}{t}} \prob{}{ \qmsmt{q, \alpha, \beta_\alpha}{t}|\pose{t}^{(\alpha)}, \rstate{t}^{(\alpha, \beta_\alpha)}, \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1}, u_{t-1 }} \\
-	&W_t^{(j_t, \alpha, \beta_\alpha)}:= \frac{\tilde{W}_t^{(j_t, \alpha, \beta_\alpha)}}{\eta^{(j_t, \alpha, \beta_\alpha)}} \quad \eta^{(j_t, \alpha, \beta_\alpha)}:= \sum_{\beta_\alpha = 1}^{P_\beta}\tilde{W}_t^{(j_t, \alpha, \beta_\alpha)} 
-\end{align}	The combined likelihood over both $\alpha$ and $\beta$ particles for physical and quasi-measurements is simply the product of the two weights calculated before.  With the normalisation factors $\{ \eta^{(\cdot)} \}$ defined previously, the sum of all $W_t^{(\alpha, \beta_\alpha)}$  for all $P_\alpha \times P_\beta$ particles is normalised. (QN: Alternatively, the normalisation steps can be removed and done once at the end over  $W_t^{(\alpha, \beta_\alpha)}.$)
+	&\mval{j_t, \alpha}{t}  \leftarrow \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1} \label{eqn:slam:PF:6:beta:mapupdate}\\ 
+	&\tilde{W}_t^{( \beta_\alpha | j_t, \alpha)} \nonumber \\
+	&= \prod_{\forall q \in \qset{j_t, \alpha, \beta_\alpha}{t}} \prob{}{ \qmsmt{q, \alpha, \beta_\alpha}{t}|\pose{t}^{(\alpha)}, \rstate{t}^{(\alpha, \beta_\alpha)}, \hat{M}_t^{(j_t, \alpha)}| \hat{M}_{t-1}, u_{t-1 }} \label{eqn:slam:PF:7:beta:raw} \\
+	&W_t^{( \beta_\alpha | j_t, \alpha)}:= \frac{\tilde{W}_t^{( \beta_\alpha | j_t, \alpha)}}{\eta^{( \beta_\alpha | j_t, \alpha)}} \quad \eta^{( \beta_\alpha | j_t, \alpha)}:= \sum_{\beta_\alpha = 1}^{P_\beta}\tilde{W}_t^{( \beta_\alpha | j_t, \alpha)} \label{eqn:slam:PF:8:beta:norm}
+\end{align}	Note that we do not maintain or store the second layer of weights from the previous measurement, namely, there is no record of $W_{t-1}^{( \beta_\alpha | j_{t-1}, \alpha)}$. This is because the location of the sensing qubit changes with $t$. Instead of retaining an arbitrarily long history of all possible $\beta$ particles, we expand and collapse according to $ \mathcal{U}(0,L_t)$.\\
+\\
+The combined likelihood over both $\alpha$ and $\beta$ particles for physical and quasi-measurements is simply the product of the two weights calculated before.  With the normalisation factors $\{ \eta^{(\cdot)} \}$ defined previously, the sum of all $W_t^{(\alpha, \beta_\alpha | j_t)}$  for all $P_\alpha \times P_\beta$ particles is normalised. (QN: Alternatively, the normalisation steps can be removed and done once at the end over  $W_t^{(\alpha, \beta_\alpha | j_t)}$)
 \begin{align}
-W_t^{(\alpha, \beta_\alpha)} &:= W_t^{(j_t, \alpha)}  W_t^{(j_t, \alpha, \beta_\alpha)} \\
-\mathrm{with} \quad & \sum_{\alpha=1}^{P_\alpha} \sum_{\beta_\alpha=1}^{P_\beta}  W_t^{(\alpha, \beta_\alpha)} = 1.
-\end{align} Re-sampling with respect to final weights, $W_t^{(\alpha, \beta_\alpha)}$, select the most likely noise map value and neighbourhood length-scale at $j_t$. We outline the re-sampling methods in the next subsection. 
+W_t^{(\alpha, \beta_\alpha | j_t)} &:= W_t^{( \alpha | j_t)}  W_t^{( \beta_\alpha | j_t, \alpha)} \label{eqn:slam:PF:9:weights:raw} \\
+\mathrm{with} \quad & \sum_{\alpha=1}^{P_\alpha} \sum_{\beta_\alpha=1}^{P_\beta}  W_t^{(\alpha, \beta_\alpha | j_t)} = 1. \label{eqn:slam:PF:10:weights:norm}
+\end{align} The  weights, $W_t^{(\alpha, \beta_\alpha | j_t)}$, essentially sample from the posterior distribution in EQNREF and score particles (hypotheses for the true state) for their net likelihood given physical and quasi-measurement information. The structure of the resulting particle filter is given in \cref{algorithm:q-slamR}.
 
+\begin{algorithm}[H] % Floats not comptatible with revtek4-1. Need "[H] option. 
+	\caption{q-slam-r}\label{algorithm:q-slamR}
+	\begin{algorithmic}[0] 
+		\Procedure{qslamr}{$ \mathrm{Qubit Grid}$}\Comment{Input $N$ nodes}
+		\\
+		\If{$ t = 0$}
+		\Procedure{Initialize}{$\mu_{w,r}, \sigma^2_{w,r},  R, \Sigma, \gamma_T, P_{\alpha,\beta} $}
+		\State Set $d_{\mathrm{grid}}$ \Comment{\cref{eqn:slam:PF:14}}
+		\For{$ \alpha \in P_\alpha$}
+		\State Sample $x_{0}^{(\alpha)} \sim \prob{}{x_{0}}$ \Comment{??}
+		\State Compute $W_0^{(\alpha)} $ \Comment{\cref{eqn:slam:PF:5:alpha:norm} }
+		\EndFor
+		\EndProcedure \label{pseudoalgo:qslamr:initialise}
+		\EndIf
+		\\
+		\While{$ 1 \leq t < T$}
+		
+		\State $\{j_t, \pmsmt{j_t}{t}\} \gets $\Call{ReceiveMsmt}{$d, u_t$}
+		\State $\{x_{t}^{(\alpha)}\} \gets $ \Call{PropagateStates}{Posterior $\{x_{t-1}^{(\alpha)} \}$ }
+		\State $\{\{x_t, W_t\}^{(\alpha, \beta_\alpha)}\} \gets $ \Call{ComputeWeights}{$\{x_{t}^{(\alpha)}\}$}
+		
+		\If{$P_{\mathrm{eff}, t} < \gamma_T$}
+		\State $\{\{x_t, W_t\}^{(\alpha, \beta_\alpha)}\} \gets $ \Call{Resample}{${\{x_t, W_t\}^{(\alpha, \beta_\alpha)}}$}
+		\EndIf
+		\State $\{x_t^{(\alpha)}, W_t^{(\alpha)}\} \gets $ \Call{Collapse$\beta$}{$\{\{x_t, W_t\}^{(\alpha, \beta_\alpha)}\}$}
+		\EndWhile \label{pseudoalgo:qslamr:endwhile2}			
+		\EndProcedure
+	\end{algorithmic}	
+\end{algorithm}
+
+If weights are recursively updated for large measurement records, it is often the case that the particles become degenerate quickly. Particle degeneracy means that a few particles with large weights dominate the inference procedure. In these conditions, it is likely that the filter converges too quickly and will produce biased estimates of the true state. A practical technique to ensure diversity in the particle set is to `resample' - namely, we replace existing particles with a new set of particles and associated weights. This re-sampling step is indicated in \cref{algorithm:q-slamR}. The purpose of the re-sampling step is to select the most likely joint true state - namely position, noise map value and neighbourhood length-scale - at $j_t$ while maintaining a diversity of particles to track the noise field without becoming degenerate. The details of the re-sampling step is outlined the re-sampling methods in the next subsection. 
 \subsection{Adaptive Re-Sampling for Slow Temporal Noise Drift}
-If weights are recursively updated for large measurement records, it is often the case that the particles become degenerate quickly. Particle degeneracy means that a few particles with large weights dominate the inference procedure. In these conditions, it is likely that the filter converges too quickly and will produce biased estimates of the true state. A practical technique to ensure diversity in the particle set is to `resample' - namely, we replace existing particles with a new set of particles and associated weights. A review of procedures for grouping particles and re-sampling operations for unbiased state estimation is given in \cite{li2015resampling}.\\
-\\
-In this manuscript, we employ a simple adaptive procedure for resampling particles using a threshold $\gamma_{T}$. Let $P_{\mathrm{eff},t}$ denote the effective number of particles such that if the variance of the weights is high, then $P_{\mathrm{eff},t}$ approaches zero:
+We wish to maintain the diversity of particles in our stratified filter while converging into sub-spaces of the true state which are more likely given our measurement record. A review of procedures for grouping particles and re-sampling operations for unbiased state estimation is given in \cite{li2015resampling}. In this manuscript, we employ a simple adaptive procedure for resampling particles using a threshold $\gamma_{T}$. If the variance of the posterior weights, $\{W_t^{(\alpha, \beta_\alpha | j_t)}\}$ rises above some threshold, we know that the effective number of particles in the filter reduces (a greater density of particles means we expect less uncertainty in resolving a unknown posterior distribution). Hence, if the variance of the particles is very high, then we draw particles from a discrete posterior probability distribution represented by the final weights, $\{W_t^{(\alpha, \beta_\alpha | j_t)}\}$. This new set of particles replaces the original set  and all posterior weights are reset to a uniform value. 
+\begin{algorithm}[H] % Floats not comptatible with revtek4-1. Need "[H] option. 
+	\caption{Supporting Functions}\label{algorithm:q-slamR:supportf}
+	\begin{algorithmic}[0] 
+		
+		\Function{ReceiveMsmt}{$d, u_t$}\Comment{ Receive $d \in \{0,1\}$} 
+		\State $j_t \gets \poseest{t}$
+		\State $\pmsmt{j_t}{t} \gets d$
+		\EndFunction
+		\\ \dotfill
+		\Function{PropagateStates}{Posterior $\{x_{t-1}^{(\alpha)} \}$ }
+		\For{$\alpha \in P_\alpha$}
+		\State Sample $X \sim \prob{}{x_{t}| x_{t-1}, u_{t-1}}$ \Comment{\cref{eqn:slam:dynamics:full}}
+		\State $x_{t}^{(\alpha)} \gets X$
+		\EndFor
+		\EndFunction
+		\\ \dotfill
+		\Function{ComputeWeights}{$\{x_{t}^{\alpha}\}$}
+		\For{$\alpha \in P_\alpha$}
+		\State Compute $\tilde{W}_t^{( \alpha | j_t)} $ \Comment{\cref{eqn:slam:PF:4:alpha:raw} }
+		\State $\mest{j_t, \alpha}{t} \gets \hat{M}^{(j_t)}_t$ \Comment{\cref{eqn:physetting:mapdatassoc:2,eqn:physetting:forgettingfactor}}
+		\State Generate $\{\beta_\alpha, x_t^{(\alpha, \beta_\alpha)} \} $ by $\rest{j_t}{t} \sim \mathcal{U}(0,L) $ \Comment{\cref{eqn:slam:PF:13}}
+		\For{$\beta_\alpha \in P_\beta$}
+		\State Generate $\qmsmt{q \alpha, \beta_\alpha}{t}$ \Comment{\cref{eqn:physetting:quantiser:2,eqn:physetting:quantiser:3}}
+		\State Compute $\tilde{W}_t^{( \beta_\alpha | j_t, \alpha)}$ \Comment{\cref{eqn:slam:PF:7:beta:raw}}
+		\EndFor
+		\State Normalise $\tilde{W}_t^{( \beta_\alpha | j_t, \alpha)}$ \Comment{\cref{eqn:slam:PF:8:beta:norm}}
+		\EndFor
+		\State Normalise $\tilde{W}_t^{( \alpha | j_t)}$ \Comment{\cref{eqn:slam:PF:5:alpha:norm}}
+		\State Compute $W_t^{(\alpha, \beta_\alpha |j_t)}, \quad \forall \{\alpha, \{\beta_\alpha\} \}$\Comment{\cref{eqn:slam:PF:10:weights:norm}}
+		\EndFunction 
+		\\ \dotfill
+		\Function{Resample}{${\{x_t, W_t\}^{(i)}}$}
+		\For{$i$}
+		\State Sample $X$  according to $\{W_t^{(i)}\}$
+		\State $x_t^{(i)} \gets X$
+		\EndFor
+		\State Reset $\{W_t^{(i)}\}$ to a uniform distribution
+		\EndFunction 
+		\\ \dotfill
+		\Function{Collapse$\beta$}{$\{\{x_t, W_t\}^{(\alpha, \beta_\alpha)}\}$}
+		\State $\{\rest{j_t, \alpha}{t}\} \gets \ex{\rest{j_t, \alpha, \beta_\alpha}{t}}_{\beta_\alpha}$
+		\State $\{ W_t^{(\alpha)}\}  \gets \sum_{\beta_\alpha =1 }^{P_\beta} W_t^{(\alpha, \beta_\alpha)} $
+		\EndFunction 
+	\end{algorithmic}
+\end{algorithm}
+
+Quantitatively, let $P_{\mathrm{eff},t}$ denote the effective number of particles such that if the variance of the weights is high, then $P_{\mathrm{eff},t}$ approaches zero:
 \begin{align}
-& P_{\mathrm{eff},t} := \frac{1}{\sum_{\alpha=1}^{P_\alpha} \sum_{\beta_\alpha=1}^{P_\beta} \left( W_t^{(\alpha, \beta_\alpha)} \right)^2} \\
-&\textrm{Resample at $t$ if:  }  P_{\mathrm{eff},t} < \gamma_{T} 
-\end{align}Then we choose to resample only when $P_{\mathrm{eff},t}$ falls below some threshold $\gamma_{T}$ such that setting $\gamma_{T} \equiv P_\alpha \times P_\beta$ will result in resampling at every $t$ step \cite{li2015resampling}.\\
-\\
-If resampling is initiated, we sample $P_\alpha$ particles with probability given by $ W_t^{(\alpha, \beta_\alpha)}$. Once these posterior samples have been generated, we replace all $\alpha$ particle ($\beta$ particle) weights to $1 / P_\alpha$ ($1 / P_\beta$). For the next measurement at $j_t$, we need access to the second layer - namely the $\beta_\alpha$ set of particles for each $\alpha$.  Accessing this $\beta_\alpha$ particle set at any node $k$ means that the posterior length-scale from the previous time step, $\rest{k}{t-1}$, is used to generate a uniform distribution of  $P_\beta$ particles, over the interval $(0, L_t)$, where:
+& P_{\mathrm{eff},t} := \frac{1}{\sum_{\alpha=1}^{P_\alpha} \sum_{\beta_\alpha=1}^{P_\beta} \left( W_t^{(\alpha, \beta_\alpha | j_t)} \right)^2} \label{eqn:slam:PF:11} \\
+&\textrm{Resample at $t$ if:  }  P_{\mathrm{eff},t} < \gamma_{T}  \label{eqn:slam:PF:12}
+\end{align}Then we choose to resample only when $P_{\mathrm{eff},t}$ falls below some threshold $\gamma_{T}$ such that setting $\gamma_{T} \equiv P_\alpha \times P_\beta$ will result in resampling at every $t$ step \cite{li2015resampling}. We can now revisit the span of the uniform distribution for length-scales that is expanded and collapsed at each $t$, namely:
 \begin{align}
-L_t & \propto  d_{\mathrm{grid}} P_{\mathrm{eff}, t} \\  
-d_{\mathrm{grid}} &= \max v_{k k'}, \quad \forall k, k' \in N.
-\end{align}Here, $L$ represents the variation in potential length-scales that takes account of the maximal physical separation of any two qubits in the hardware, ($d_{\mathrm{grid}}$). In the limit when the variance of posterior particle weights are high, the smearing action should be small so that it does not introduce a systematic bias in the filtering procedure. This means $P_{\mathrm{eff}, t} $ should reduce the  scale of a distribution over length scales, $L_t$, if the uncertainty in our map estimates increases. 
+L_t & \propto  d_{\mathrm{grid}} P_{\mathrm{eff}, t} \label{eqn:slam:PF:13}\\  
+d_{\mathrm{grid}} &= \max v_{k k'}, \quad \forall k, k' \in N. \label{eqn:slam:PF:14}
+\end{align}
+This means $P_{\mathrm{eff}, t} $ should reduce the  scale of a distribution over length scales, $L_t$, if the uncertainty in our map estimates increases. Further, $L_t$ depends on the physical size of the grid, namely, the maximal physical separation of any two qubits given by $d_{\mathrm{grid}}$. \\
+\\
+%If resampling is initiated, we sample $P_\alpha$ particles with probability given by $ W_t^{(\alpha, \beta_\alpha |j_t)}$. Once these posterior samples have been generated, we replace all weights to $(P_\alpha P_\beta)^{-1}$.\\
+A summary of the key concepts discussed in this section, and all support functions for implementing propagation, weight calculation, and re-sampling  in \cref{algorithm:q-slamR} are collectively given in \cref{algorithm:q-slamR:supportf}. 
+
 \section{Numerical Results}
-- physically known, $N, v_{k k'}, d_{\mathrm{grid}}$ \\
-- qubit jitter / dynamics parameter, $\sigma^2_w$ \\
-- map dynamics - NA (deterministic function)\\
-- length-scale dynamics - ?? \\ 
-- noise likelihood parameters, $R, \Sigma$ \\
-- free simulation parameters, $ \gamma_T, P_\alpha, P_\beta$. \\
 \section{Discussion}
 \section{Conclusion}
 %The recursive calculation of the posterior, as well as the normalisation process, is given in the pseudo-code of a typical particle filtering algorithm (see, for example, \cite{candy2016bayesian}). In a typical recursive calculation, each particle represents a hypothesis about the true state, and is denoted as $x_t^{(\alpha)}$. These particles are propagated using a known or chosen  $\prob{}{x_{t}| x_{t-1}, u_{t-1} }$. Given propagated states, one computes the weights of particles. 
+
+
+
+
+
+
+
+\iffalse
+	\begin{algorithmic}[0]
+		
+		\Procedure{Euclid}{$a,b$}\Comment{The g.c.d. of a and b}
+		\State $r\gets a\bmod b$
+		\While{$r\not=0$}\Comment{We have the answer if r is 0}
+		\State $a\gets b$
+		\State $b\gets r$
+		\State $r\gets a\bmod b$
+		\EndWhile\label{euclidendwhile}
+		\State \textbf{return} $b$\Comment{The gcd is b}
+		\EndProcedure
+		
+	\end{algorithmic}
+	
+\fi

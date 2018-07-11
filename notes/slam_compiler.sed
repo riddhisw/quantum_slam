@@ -15,10 +15,6 @@ s/\\cref@listing@name /listing/g
 s/\\cref@listing@name@plural /listings/g 
 s/\\Cref@listing@name /Listing/g 
 s/\\Cref@listing@name@plural /Listings/g 
-s/\\cref@algorithm@name /algorithm/g 
-s/\\cref@algorithm@name@plural /algorithms/g 
-s/\\Cref@algorithm@name /Algorithm/g 
-s/\\Cref@algorithm@name@plural /Algorithms/g 
 s/\\cref@note@name /note/g 
 s/\\cref@note@name@plural /notes/g 
 s/\\Cref@note@name /Note/g 
@@ -71,6 +67,10 @@ s/\\cref@theorem@name /Theorem/g
 s/\\cref@theorem@name@plural /Theorems/g 
 s/\\Cref@theorem@name /\\MakeUppercase Theorem/g 
 s/\\Cref@theorem@name@plural /\\MakeUppercase Theorems/g 
+s/\\cref@algorithm@name /Algorithm/g 
+s/\\cref@algorithm@name@plural /Algorithms/g 
+s/\\Cref@algorithm@name /\\MakeUppercase Algorithm/g 
+s/\\Cref@algorithm@name@plural /\\MakeUppercase Algorithms/g 
 s/\\cref@appendix@name /Appendix/g 
 s/\\cref@appendix@name@plural /Appendices/g 
 s/\\Cref@appendix@name /\\MakeUppercase Appendix/g 
