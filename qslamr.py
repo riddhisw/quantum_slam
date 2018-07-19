@@ -63,14 +63,35 @@ class ParticleFilter(Grid):
 
         for t_item in measurements_controls:
 
+            print
+            print
+            print " NEW MSMT"
+            print
             next_phys_msmt_j = t_item[0]
             control_j = t_item[1]
             self.ReceiveMsmt(control_j, next_phys_msmt_j)
+            print
+            print " PROPAGATE"
+            print
+ 
             self.PropagateState(control_j)
+            print
+            print " COMPUTER WEIGHTS "
+            print
+ 
             posterior_weights = self.ComputeWeights(control_j)
+
+            print
+            print " RESAMPLE"
+            print
+ 
             self.ResampleParticles(posterior_weights)
             posterior_state = self.AlphaSet.posterior_state
             self.QubitGrid.state_vector = posterior_state 
+            print
+            print " QUASI MSMT"
+            print
+ 
             self.update_qubitgrid_via_quasimsmts(control_j, posterior_state)
 
 #       ------------------------------------------------------------------------
@@ -130,6 +151,7 @@ class ParticleFilter(Grid):
         self.generate_beta_neighbourhood(SmearParticle)
 
         for idx in range(len(SmearParticle.neighbourhood_qj)):
+
             neighbour_q = SmearParticle.neighbourhood_qj[idx]
             quasi_phase_q = SmearParticle.smeared_phases_qj[idx]
             born_prob_q = ParticleFilter.born_rule(quasi_phase_q)
@@ -233,6 +255,7 @@ class ParticleFilter(Grid):
 
             self.update_alpha_map_via_born_rule(control_j)
             beta_alpha_j_weights = self.generate_beta_layer(alpha_particle)
+            print "beta_alpha_j_weights in Compute Weihgts", beta_alpha_j_weights
             posterior_weights.append(alpha_particle.weight*beta_alpha_j_weights)
         
         posterior_weights = np.asarray(posterior_weights).flatten()
@@ -274,6 +297,7 @@ class ParticleFilter(Grid):
         print
         print "In generate_beta_layer, list_of_parent_states =", list_of_parent_states
         alpha_particle.generate_beta_pset(list_of_parent_states) #generates beta layer for each alpha
+        print "alpha_particle post generate_beta_pset", alpha_particle.BetaAlphaSet_j.particles
 
         for beta_particle_object in alpha_particle.BetaAlphaSet_j.particles:
             self.generate_beta_neighbourhood(beta_particle_object) # compute smeared phases for each beta particle
@@ -307,135 +331,42 @@ class ParticleFilter(Grid):
         resampled_idx = np.arange(self.pset_alpha*self.pset_beta)
 
         if self.resample_thresh > self.effective_particle_size(posterior_weights):
-            resampled_idx = self.resample_constant_pset_alpha(posterior_weights)
+            resampled_idx = ParticleFilter.resample_constant_pset_alpha(posterior_weights, self.pset_alpha, self.pset_beta)
 
-        new_alpha_subtrees = self.get_subtrees(resampled_idx)
+        new_alpha_subtrees = self.get_subtrees(resampled_idx, self.pset_beta)
         new_alpha_list = self.collapse_beta(new_alpha_subtrees, resampled_idx)
-        
+
         self.pset_alpha = len(new_alpha_list)
+        print "Resample Partices, self.pset_alpha ", self.pset_alpha 
         self.AlphaSet.particles = new_alpha_list # garanteed to be pset_alpha with no second layer
         self.AlphaSet.weights_set = (1.0/self.pset_alpha)*np.ones(self.pset_alpha)
 
-
-    def resample_constant_pset_alpha(self, posterior_weights):
-        '''Returns indicies for particles picked after sampling from posterior'''
-        # DO WEIGHTS NEED TO BE SORTED? (No, the CDF will be
-        # monotnically increasing; and the shape of the CDF will determine
-        # the frequency at which (x,y) are sampled if y is uniform )
-
-        sufficient_sample = False
-        num_of_samples = self.pset_alpha
-        total_particles = len(posterior_weights)
-
-        if total_particles != int(INITIALDICT["P_ALPHA"]*INITIALDICT["P_BETA"]):
-            print "Total weights != P_alpha * P_beta"
-            raise RuntimeError
-
-        while sufficient_sample is False:
-
-            num_of_samples *= 2 # TODO: exponentially growing search
-            resampled_indices = self.resample_from_weights(posterior_weights, num_of_samples)
-            unique_alphas = list(set([ParticleFilter.get_alpha_node_from_treeleaf(leafy, self.pset_beta) for leafy in resampled_indices]))
-
-            if len(unique_alphas) == self.pset_alpha:
-                sufficient_sample = True
-
-        return resampled_indices
-
-
-    def resample_from_weights(self, posterior_weights, number_of_samples):
-        '''docstring'''
-        total_particles = len(posterior_weights)
-        cdf_weights = np.asarray([0] + [np.sum(posterior_weights[:idx+1]) for idx in range(total_particles)])
-        pdf_uniform = np.random.random(size=number_of_samples)
-
-        resampled_idx = []
-
-        for u_0 in pdf_uniform:
-            j = 0
-            while u_0 > cdf_weights[j]:
-                j += 1
-                if j >= total_particles:
-                    j = total_particles -1
-                    # print('Break - max particle index reached during sampling')
-                    break   # clip at max particle index, plus zero
-            resampled_idx.append(j)
-
-        return resampled_idx
-
-
-    def get_subtrees(self, resampled_indices):
-        '''docstring'''
-
-        new_sub_trees = []
-
-        resampled_indices.sort()
-        alpha_index_0 = None
-        strt_counter = 0
-        end_counter = 0
-
-        for idx in resampled_indices:
-
-            alpha_index = ParticleFilter.get_alpha_node_from_treeleaf(idx, self.pset_beta)
-            beta_alpha_idx = ParticleFilter.get_beta_node_from_treeleaf(idx, self.pset_beta)
-
-            if alpha_index_0 == alpha_index:
-                end_counter += 1
-
-            elif alpha_index_0 != alpha_index:
-
-                new_sub_trees.append([strt_counter, end_counter])
-
-                alpha_index_0 = alpha_index
-                strt_counter = end_counter
-                end_counter += 1
-
-        if end_counter == len(resampled_indices):
-            end_counter += 1
-            new_sub_trees.append([strt_counter, end_counter])
-
-        return new_sub_trees
-
-
-    def collapse_beta(self, new_sub_trees, resampled_indices):
+    def collapse_beta(self, subtree_list, resampled_indices):
         '''docstring'''
 
         state_update = 0.
-        pset_beta = self.pset_beta
-
         new_alpha_particle_list = []
-        for pairs in new_sub_trees:
+        for subtree in subtree_list:
 
-            subtree = resampled_indices[pairs[0]:pairs[1]]
-            leaf_count = float(len(subtree))
-
-            print
-            print "In collapse_beta, and checking variables"
-            print "subtree", subtree
-            print "leaf_count", leaf_count
-
+            leaves_of_subtree = resampled_indices[subtree[0]:subtree[1]]
+            leaf_count = float(len(leaves_of_subtree))
+            print "The subtree is defined by the endpoint index boundaries", subtree
+            print "The leaves of the subtree are ", leaves_of_subtree
 
             if leaf_count != 0:
 
                 normaliser = (1./leaf_count)
-                alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(pairs[0], pset_beta)
-                beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, pset_beta) for leafy in subtree]
-
+                alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(leaves_of_subtree[0], self.pset_beta)
+                               # resampled_indices[subtree[0]], self.pset_beta)
+                beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, self.pset_beta) for leafy in leaves_of_subtree]
+                               # resampled_indices[subtree[0]:subtree[1]]]
+                print "The subtree has alpha node of: ", alpha_node
+                print "The leaves of the subtree are labeled by beta indices", beta_alpha_nodes
+                print
                 r_est_subtree = 0.0
-                print "beta_alpha_nodes",  beta_alpha_nodes
                 for node in beta_alpha_nodes:
-                    print "node in beta_alpha_nodes", node
-                    print "self.AlphaSet.particles[alpha_node], alpha_node = ", alpha_node
-                    print "self.AlphaSet.particles[alpha_node]", self.AlphaSet.particles[alpha_node]
-                    print "self.AlphaSet.particles[alpha_node].BetaAlphaSet_j", self.AlphaSet.particles[alpha_node].BetaAlphaSet_j
-                    print "self.AlphaSet.particles[alpha_node].BetaAlphaSet_j.particles", self.AlphaSet.particles[alpha_node].BetaAlphaSet_j.particles
-
                     beta_state = self.AlphaSet.particles[alpha_node].BetaAlphaSet_j.particles[node].particle
                     node_j = self.AlphaSet.particles[alpha_node].node_j
-                    
-                    print "node_j", node_j
-                    print "beta_state", beta_state
-                    print "beta_state type", type(beta_state)
                     beta_lengthscale = beta_state[int(node_j)]
                     r_est_subtree += normaliser*beta_lengthscale
 
@@ -448,7 +379,7 @@ class ParticleFilter(Grid):
 
                 # New Alphas Stored
                 new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
-        print
+
         return new_alpha_particle_list
 
 
@@ -490,3 +421,110 @@ class ParticleFilter(Grid):
         '''docstring'''
         beta_node = int(leaf_index - int(leaf_index//float(pset_beta))*pset_beta)
         return beta_node
+
+    @staticmethod
+    def resample_from_weights(posterior_weights, number_of_samples):
+        '''docstring'''
+        total_particles = len(posterior_weights)
+        cdf_weights = np.asarray([0] + [np.sum(posterior_weights[:idx+1]) for idx in range(total_particles)])
+        pdf_uniform = np.random.uniform(low=0, high=1.0, size=number_of_samples)
+
+        resampled_idx = []
+
+        for u_0 in pdf_uniform:
+            j = 0
+            while u_0 > cdf_weights[j]:
+                j += 1
+                if j > total_particles:
+                    j = total_particles
+                    # print('Break - max particle index reached during sampling')
+                    break   # clip at max particle index, plus zero
+            resampled_idx.append(j-1) # sgift down to match python indices
+
+        return resampled_idx
+
+    @staticmethod
+    def resample_constant_pset_alpha(posterior_weights, pset_alpha, pset_beta):
+        '''Returns indicies for particles picked after sampling from posterior'''
+        # DO WEIGHTS NEED TO BE SORTED? (No, the CDF will be
+        # monotnically increasing; and the shape of the CDF will determine
+        # the frequency at which (x,y) are sampled if y is uniform )
+
+        sufficient_sample = False
+        num_of_samples = pset_alpha
+        total_particles = len(posterior_weights)
+
+        print "posterior_weights", posterior_weights
+
+        if total_particles != int(INITIALDICT["P_ALPHA"]*INITIALDICT["P_BETA"]):
+            print "Total weights != P_alpha * P_beta"
+            raise RuntimeError
+
+        while sufficient_sample is False:
+
+            num_of_samples += 5
+            print "Number of sufficient samples are:", num_of_samples
+            resampled_indices = ParticleFilter.resample_from_weights(posterior_weights, num_of_samples)
+            resampled_alphas = [ParticleFilter.get_alpha_node_from_treeleaf(leafy, pset_beta) for leafy in resampled_indices]
+            unique_alphas = set(list(resampled_alphas))
+            if len(unique_alphas) == pset_alpha:
+                sufficient_sample = True
+
+        return resampled_indices
+
+    @staticmethod
+    def get_subtrees(resampled_indices, pset_beta):
+        '''docstring'''
+
+        new_sub_trees = []
+
+        resampled_indices.sort()
+        alpha_index_0 = None
+        strt_counter = 0
+        end_counter = 0
+
+        for idx in resampled_indices:
+
+            alpha_index = ParticleFilter.get_alpha_node_from_treeleaf(idx, pset_beta)
+            beta_alpha_idx = ParticleFilter.get_beta_node_from_treeleaf(idx, pset_beta)
+
+            if alpha_index_0 == alpha_index:
+                end_counter += 1
+
+            elif alpha_index_0 != alpha_index:
+
+                new_sub_trees.append([strt_counter, end_counter])
+
+                alpha_index_0 = alpha_index
+                strt_counter = end_counter
+                end_counter += 1
+
+        if end_counter == len(resampled_indices):
+            # end_counter += 1
+            new_sub_trees.append([strt_counter, end_counter])
+
+        print "in get subtrees", new_sub_trees
+        return new_sub_trees
+    # def collapse_beta(self, new_sub_trees, resampled_indices):
+    #     '''docstring'''
+
+    #     state_update = 0.
+    #     pset_beta = self.pset_beta
+
+    #     new_alpha_particle_list = []
+    #     for pairs in new_sub_trees:
+
+    #         subtree = resampled_indices[pairs[0]:pairs[1]]
+    #         leaf_count = float(len(subtree))
+
+    #         print
+    #         print "In collapse_beta, and checking variables"
+    #         print "subtree", subtree
+    #         print "leaf_count", leaf_count
+
+
+    #         if leaf_count != 0:
+
+    #             normaliser = (1./leaf_count)
+    #             alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(pairs[0], pset_beta)
+    #             beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, pset_beta) for leafy in subtree]

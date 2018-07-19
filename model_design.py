@@ -58,7 +58,7 @@ INITIALDICT = {"MU_W" : 0.0, # Qubit position noise mean (dynamics)
                "LAMBDA" : 0.99, # Forgetting factor for quasi-msmt information
                "GAMMA_T" : 10**8, # Re-sampling threshold
                "P_ALPHA" : 3, # Number of alpha particles
-               "P_BETA" : 4, # Numer of beta particles for each alpha
+               "P_BETA" : 3, # Numer of beta particles for each alpha
                "kernel_function" : gaussian_kernel
               }
               

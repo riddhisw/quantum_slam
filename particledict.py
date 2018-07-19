@@ -25,12 +25,12 @@ def likelihood_func_alpha(**args):
     elif msmt_dj == 1:
         alpha_weight += 1.0*rho_0*(2.0*prob_j - 1)
 
-    print
-    print "in likelihood_func_alpha, msmt_dj", msmt_dj
-    print "in likelihood_func_alpha, prob_j", prob_j
-    print "in likelihood_func_alpha, var_r", var_r
-    print "in likelihood_func_alpha, rho_0", rho_0
-    print
+    # print
+    # print "in likelihood_func_alpha, msmt_dj", msmt_dj
+    # print "in likelihood_func_alpha, prob_j", prob_j
+    # print "in likelihood_func_alpha, var_r", var_r
+    # print "in likelihood_func_alpha, rho_0", rho_0
+    # print
     return alpha_weight
 
 LIKELIHOOD_ALPHA = {"l_func" : likelihood_func_alpha,
@@ -71,12 +71,12 @@ def likelihood_func_beta(**args):
     prefactor = 1.0 / np.sqrt(2.0 * np.pi * variance)
     argument = -1.0 * ((new_phase - old_phase)- mean)**2 / (2.0 * variance)
     result = prefactor * np.exp(argument)
-    print
-    print "in likelihood_func_beta, new_phase", new_phase
-    print "in likelihood_func_beta, old_phase", old_phase
-    print "in likelihood_func_beta, argument", argument
-    print "in likelihood_func_beta, result", result
-    print
+    # print
+    # print "in likelihood_func_beta, new_phase", new_phase
+    # print "in likelihood_func_beta, old_phase", old_phase
+    # print "in likelihood_func_beta, argument", argument
+    # print "in likelihood_func_beta, result", result
+    # print
     return result
 
 LIKELIHOOD_BETA = {"l_func": likelihood_func_beta,
