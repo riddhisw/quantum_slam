@@ -45,14 +45,7 @@ class BetaParticle(Particle):
         self.neighbourhood_qj = []
         self.neighbour_dist_qj = []
         self.smeared_phases_qj = []
-        print
-        print "In class BetaParticle, made a  beta particle!"
-        print "parent shape", self.parent.shape
-        print "total nodes", self.total_nodes
-        print "node_j", self.node_j
-        print "parent", self.parent
-        print "j state",  self.parent[self.node_j::self.total_nodes]
-        print
+
         self.x_j, self.y_j, self.f_j, self.r_j = self.parent[self.node_j::self.total_nodes]
 
         self.mean_radius = self.r_j*3.0 #mean_radius_j # TODO: Change to self.r_j*3.0
@@ -132,7 +125,6 @@ class ParticleSet(object):
             new_weight_set.append(new_weight)
             
         raw_weights = np.asarray(new_weight_set).flatten()
-        print "raw_weights in calc_weights_set", raw_weights
         normalisation = 1.0/np.sum(raw_weights)
         return normalisation*raw_weights
 
@@ -153,11 +145,6 @@ class ParticleSet(object):
 
         posterior_state=0.0
         weight_sum = np.sum(self.weights_set)
-
-        if weight_sum != 1:
-            print "Sum of all alpha weight set: "
-            print "Normalising weights in posterior state calculation..."
-
         for idxp in range(self.p_set):
             posterior_state += self.particles[idxp].weight*self.particles[idxp].particle*(1.0/weight_sum)
 
