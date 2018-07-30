@@ -17,7 +17,7 @@ def likelihood_func_alpha(**args):
 
     msmt_dj = args["msmt_dj"]
     prob_j = args["prob_j"]
-    var_r = args["var_r"]
+    var_r = args["SIG2_MEASR"]
     rho_0 = rho(0.5, var_r)
 
     alpha_weight = rho_0 / 2.0
@@ -26,38 +26,39 @@ def likelihood_func_alpha(**args):
     elif msmt_dj == 1:
         alpha_weight += 1.0*rho_0*(2.0*prob_j - 1)
 
-    print
-    print "... ... ... ... In likelihood_func_alpha..."
-    print "... ... ... ... ... From >>>, physical msmt, at j,  msmt_dj = ", msmt_dj
-    print "... ... ... ... ... From >>>, sample probability , prob_j= ", prob_j
-    print "... ... ... ... ... From INITDICT, variance , var_r = ", var_r
-    print "... ... ... ... ... With analytic rho_0 for b=1/2 is rho_0= ", rho_0
-    print "... ... ... ... ... This gives a likelihood for alpha particle =", alpha_weight
-    print "... ... ... ... EXIT likelihood_func_alpha"
+    # print  
+    # print  "... ... ... ... In likelihood_func_alpha..."
+    # print  "... ... ... ... ... From >>>, physical msmt, at j,  msmt_dj = ", msmt_dj
+    # print  "... ... ... ... ... From >>>, sample probability , prob_j= ", prob_j
+    # print  "... ... ... ... ... From INITDICT, variance , var_r = ", var_r
+    # print  "... ... ... ... ... With analytic rho_0 for b=1/2 is rho_0= ", rho_0
+    # print  "... ... ... ... ... This gives a likelihood for alpha particle =", alpha_weight
+    # print  "... ... ... ... EXIT likelihood_func_alpha"
 
     return alpha_weight
 
 LIKELIHOOD_ALPHA = {"l_func" : likelihood_func_alpha,
-                    "l_args" : {"mu_R" : INITIALDICT["MU_R"], # TODO:
-                                "var_r" : INITIALDICT["SIG2_R"], # TODO:
+                    "l_args" : {"MU_MEASR" : INITIALDICT["MU_MEASR"], # TODO:
+                                "SIG2_MEASR" : INITIALDICT["SIG2_MEASR"], # TODO:
                                 "msmt_dj" : -10.0, # TODO: update via PF
                                 "prob_j" : -10.0 # TODO: update via PF
                                }}
 
 def alpha_weight_calc(alpha_particle_object, **args):
     '''docstring'''
-    print
-    print "... ... In alpha_weight_calc..."
+    # print 
+    # print  "... ... In alpha_weight_calc..."
 
     old_weight = alpha_particle_object.weight
+    # args["l_args"]["SIG2_MEASR"] = alpha_particle_object.SIG2_MEASR 
     likelihood = args["l_func"](**args["l_args"]) # TODO: there needs to be a better way of taking in msmts.
     new_raw_weight = old_weight*likelihood
 
-    print "... ... ..., old_weight", old_weight
-    print "... ... ..., likelihood", likelihood
-    print "... ... ..., new_raw_weight", new_raw_weight
-    print "... ... EXIT alpha_weight_calc"
-    print
+    # print  "... ... ..., old_weight", old_weight
+    # print  "... ... ..., likelihood", likelihood
+    # print  "... ... ..., new_raw_weight", new_raw_weight
+    # print  "... ... EXIT alpha_weight_calc"
+    # print 
     return new_raw_weight
 
 
@@ -65,15 +66,15 @@ WEIGHTFUNCDICT_ALPHA = {"function": alpha_weight_calc, "args": LIKELIHOOD_ALPHA}
 
 def update_alpha_dictionary(next_phys_msmt_j, prob_j):
     '''docstring'''
-    print
-    print " ... In update_alpha_dictionary ..."
-    print " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - old value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
-    print " ... ...  In LIKELIHOOD_ALPHA[prob_j] - old value - " , LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
+    # print 
+    # print  " ... In update_alpha_dictionary ..."
+    # print  " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - old value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
+    # print  " ... ...  In LIKELIHOOD_ALPHA[prob_j] - old value - " , LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
     LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] = next_phys_msmt_j
     LIKELIHOOD_ALPHA["l_args" ]["prob_j"] = prob_j
-    print " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
-    print " ... ...  In LIKELIHOOD_ALPHA[prob_j] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
-    print " ... EXIT update_alpha_dictionary ..."
+    # print  " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
+    # print  " ... ...  In LIKELIHOOD_ALPHA[prob_j] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
+    # print  " ... EXIT update_alpha_dictionary ..."
 
 ###############################################################################
 # BETA PARTICLES
@@ -88,13 +89,13 @@ def likelihood_func_beta(**args):
     prefactor = 1.0 / np.sqrt(2.0 * np.pi * variance)
     argument = -1.0 * ((new_phase - old_phase)- mean)**2 / (2.0 * variance)
     result = prefactor * np.exp(argument)
-    print
-    print "... ... ... ... In likelihood_func_beta ... with mean, variance = ", mean, variance
-    print "... ... ... ... ... The new_phase at q based on smearing from physical msmt info at j:", new_phase
-    print "... ... ... ... ... The old_phase at q based on posterior QubitGrid at q, at t-1:", old_phase
-    print "... ... ... ... ... Likelihood contribution at q: result = ", result
-    print "... ... ... ... EXIT likelihood_func_beta ..."
-    print
+    # print 
+    # print  "... ... ... ... In likelihood_func_beta ... with mean, variance = ", mean, variance
+    # print  "... ... ... ... ... The new_phase at q based on smearing from physical msmt info at j:", new_phase
+    # print  "... ... ... ... ... The old_phase at q based on posterior QubitGrid at q, at t-1:", old_phase
+    # print  "... ... ... ... ... Likelihood contribution at q: result = ", result
+    # print  "... ... ... ... EXIT likelihood_func_beta ..."
+    # print 
     return result
 
 LIKELIHOOD_BETA = {"l_func": likelihood_func_beta,
@@ -108,7 +109,7 @@ LIKELIHOOD_BETA = {"l_func": likelihood_func_beta,
 def beta_weight_calc(BetaParticle, **args):
     '''docstring'''
     
-    print "... ... ... In beta_weight_calc ..."
+    # print  "... ... ... In beta_weight_calc ..."
     likelihood_neighbours = []
 
     for idx_q in range(len(BetaParticle.neighbourhood_qj)):
@@ -118,10 +119,10 @@ def beta_weight_calc(BetaParticle, **args):
         likelihood_neighbours.append(likelihood)
 
     net_likelihood = np.prod(np.asarray(likelihood_neighbours).flatten())
-    print "... ... ... The likelihood over all qubits in beta neighbourhood is:", likelihood_neighbours
-    print "... ... ... The net_likelihood is:", net_likelihood
-    print "... ... ... EXIT beta_weight_calc"
-    print
+    # print  "... ... ... The likelihood over all qubits in beta neighbourhood is:", likelihood_neighbours
+    # print  "... ... ... The net_likelihood is:", net_likelihood
+    # print  "... ... ... EXIT beta_weight_calc"
+    # print 
     return net_likelihood
 
 

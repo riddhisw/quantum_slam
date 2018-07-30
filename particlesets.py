@@ -34,21 +34,28 @@ class Particle(object):
 class BetaParticle(Particle):
     '''docstring'''
 
-    def __init__(self, node_j, parent_state):
+    def __init__(self, node_j, parent_state, radius):
         Particle.__init__(self)
 
         self.parent = parent_state
         self.particle = np.asarray(parent_state).flatten() # intiialised identically to parent
         self.total_nodes = int(float(len(parent_state)) / 4.0)
 
+        # print  
+        # print  "I'm a beta particle  in  BetaParticle, and my parent state is", parent_state
+        # print  
+        
         self.node_j = node_j
         self.neighbourhood_qj = []
         self.neighbour_dist_qj = []
         self.smeared_phases_qj = []
 
-        self.x_j, self.y_j, self.f_j, self.r_j = self.parent[self.node_j::self.total_nodes]
+        self.x_j, self.y_j, self.f_j, self.r_j = self.particle[self.node_j::self.total_nodes]
 
-        self.mean_radius = self.r_j*3.0 #mean_radius_j # TODO: Change to self.r_j*3.0
+        self.mean_radius = radius #*3.0  # self.r_j*3.0  # equivalent statements
+        # print "Beta particle with radii = radius ", radius
+        # print "Beta particle intiated with radii = radius ", self.mean_radius
+
 
     def get_neighbourhood_qj(self):
         '''doc string'''
@@ -58,13 +65,15 @@ class BetaParticle(Particle):
 
         for idx in range(self.total_nodes):
 
-            xq_ = self.parent[idx]
-            yq_ = self.parent[idx + self.total_nodes]
+            xq_ = self.particle[idx]
+            yq_ = self.particle[idx + self.total_nodes]
             dist = np.sqrt((xq_ - self.x_j)**2 + (yq_ - self.y_j)**2)
 
             if dist <= self.mean_radius:
-                self.neighbourhood_qj.append(idx)
-                self.neighbour_dist_qj.append(dist)
+
+                if dist > 0.0:
+                    self.neighbourhood_qj.append(idx)
+                    self.neighbour_dist_qj.append(dist)
 
 
     def smear_fj_on_neighbours(self, **args):
@@ -97,13 +106,19 @@ class AlphaParticle(Particle):
         Particle.__init__(self)
         self.pset_beta = 0
         self.node_j = 0.0
+        self.SIG2_MEASR = 0.0
         # self.mean_radius_j = 0.0 # TODO FIX THIS. CANT BE ONE NUMBER FORALL j
         self.BetaAlphaSet_j = None
 
-    def generate_beta_pset(self, parents): #, number_of_beta_particles):
+    def generate_beta_pset(self, parents, radii): #, number_of_beta_particles):
         '''docstring'''
-        beta_s = [BetaParticle(self.node_j, state) for state in parents]
+        beta_s = []
+        for idx in range(len(parents)):
+            state = parents[idx]
+            radius = radii[idx]
+            beta_s.append(BetaParticle(self.node_j, state, radius))
         self.BetaAlphaSet_j = ParticleSet(beta_s, **WEIGHTFUNCDICT_BETA)
+        # print "generate_beta_pset...."
         # return BetaAlphaSet
 
 class ParticleSet(object):
