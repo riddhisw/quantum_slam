@@ -1,6 +1,7 @@
 from model_design import INITIALDICT
 from scipy.special import erf
 import numpy as np
+
 ###############################################################################
 # ALPHA PARTICLES
 ###############################################################################
@@ -25,56 +26,31 @@ def likelihood_func_alpha(**args):
         alpha_weight += -1.0*rho_0*(2.0*prob_j - 1)
     elif msmt_dj == 1:
         alpha_weight += 1.0*rho_0*(2.0*prob_j - 1)
-
-    # print  
-    # print  "... ... ... ... In likelihood_func_alpha..."
-    # print  "... ... ... ... ... From >>>, physical msmt, at j,  msmt_dj = ", msmt_dj
-    # print  "... ... ... ... ... From >>>, sample probability , prob_j= ", prob_j
-    # print  "... ... ... ... ... From INITDICT, variance , var_r = ", var_r
-    # print  "... ... ... ... ... With analytic rho_0 for b=1/2 is rho_0= ", rho_0
-    # print  "... ... ... ... ... This gives a likelihood for alpha particle =", alpha_weight
-    # print  "... ... ... ... EXIT likelihood_func_alpha"
-
     return alpha_weight
 
 LIKELIHOOD_ALPHA = {"l_func" : likelihood_func_alpha,
-                    "l_args" : {"MU_MEASR" : INITIALDICT["MU_MEASR"], # TODO:
-                                "SIG2_MEASR" : INITIALDICT["SIG2_MEASR"], # TODO:
+                    "l_args" : {"MU_MEASR" : INITIALDICT["MU_MEASR"], # TODO: carefully define noise inputs
+                                "SIG2_MEASR" : INITIALDICT["SIG2_MEASR"], # TODO: carefully define noise inputs
                                 "msmt_dj" : -10.0, # TODO: update via PF
                                 "prob_j" : -10.0 # TODO: update via PF
                                }}
 
 def alpha_weight_calc(alpha_particle_object, **args):
     '''docstring'''
-    # print 
-    # print  "... ... In alpha_weight_calc..."
 
     old_weight = alpha_particle_object.weight
-    # args["l_args"]["SIG2_MEASR"] = alpha_particle_object.SIG2_MEASR 
     likelihood = args["l_func"](**args["l_args"]) # TODO: there needs to be a better way of taking in msmts.
     new_raw_weight = old_weight*likelihood
-
-    # print  "... ... ..., old_weight", old_weight
-    # print  "... ... ..., likelihood", likelihood
-    # print  "... ... ..., new_raw_weight", new_raw_weight
-    # print  "... ... EXIT alpha_weight_calc"
-    # print 
     return new_raw_weight
 
 
 WEIGHTFUNCDICT_ALPHA = {"function": alpha_weight_calc, "args": LIKELIHOOD_ALPHA}
 
+
 def update_alpha_dictionary(next_phys_msmt_j, prob_j):
     '''docstring'''
-    # print 
-    # print  " ... In update_alpha_dictionary ..."
-    # print  " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - old value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
-    # print  " ... ...  In LIKELIHOOD_ALPHA[prob_j] - old value - " , LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
     LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] = next_phys_msmt_j
     LIKELIHOOD_ALPHA["l_args" ]["prob_j"] = prob_j
-    # print  " ... ...  In LIKELIHOOD_ALPHA[msmt_dj] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["msmt_dj"] 
-    # print  " ... ...  In LIKELIHOOD_ALPHA[prob_j] - new value - ", LIKELIHOOD_ALPHA["l_args" ]["prob_j"]
-    # print  " ... EXIT update_alpha_dictionary ..."
 
 ###############################################################################
 # BETA PARTICLES
@@ -89,40 +65,28 @@ def likelihood_func_beta(**args):
     prefactor = 1.0 / np.sqrt(2.0 * np.pi * variance)
     argument = -1.0 * ((new_phase - old_phase)- mean)**2 / (2.0 * variance)
     result = prefactor * np.exp(argument)
-    # print 
-    # print  "... ... ... ... In likelihood_func_beta ... with mean, variance = ", mean, variance
-    # print  "... ... ... ... ... The new_phase at q based on smearing from physical msmt info at j:", new_phase
-    # print  "... ... ... ... ... The old_phase at q based on posterior QubitGrid at q, at t-1:", old_phase
-    # print  "... ... ... ... ... Likelihood contribution at q: result = ", result
-    # print  "... ... ... ... EXIT likelihood_func_beta ..."
-    # print 
     return result
 
 LIKELIHOOD_BETA = {"l_func": likelihood_func_beta,
-                   "l_args": {"sigma_f" : INITIALDICT["SIG2_F"],
-                              "mu_f" : INITIALDICT["MU_F"],
-                              "new_phase": 0.0, # TODO: update via PF
-                              "old_phase": 0.0  # TODO: update via PF
+                   "l_args": {"sigma_f" : INITIALDICT["SIG2_F"], # TODO: carefully define noise inputs
+                              "mu_f" : INITIALDICT["MU_F"], # TODO: carefully define noise inputs
+                              "new_phase" : 0.0, # TODO: update via PF
+                              "old_phase" : 0.0 # TODO: update via PF
                              }
                   }
 
 def beta_weight_calc(BetaParticle, **args):
     '''docstring'''
-    
-    # print  "... ... ... In beta_weight_calc ..."
+
     likelihood_neighbours = []
 
     for idx_q in range(len(BetaParticle.neighbourhood_qj)):
         args["new_phase"] = BetaParticle.smeared_phases_qj[idx_q]
         args["old_phase"] = BetaParticle.parent[idx_q]
-        likelihood = args["l_func"](**args["l_args"]) # TODO: there needs to be a better way of taking in new_phase, old_phase.
+        likelihood = args["l_func"](**args["l_args"])
         likelihood_neighbours.append(likelihood)
 
     net_likelihood = np.prod(np.asarray(likelihood_neighbours).flatten())
-    # print  "... ... ... The likelihood over all qubits in beta neighbourhood is:", likelihood_neighbours
-    # print  "... ... ... The net_likelihood is:", net_likelihood
-    # print  "... ... ... EXIT beta_weight_calc"
-    # print 
     return net_likelihood
 
 

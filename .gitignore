@@ -4,3 +4,10 @@
 *.ai
 *.log
 *.pyc
+
+
+*.aux
+*.bbl
+*.blg
+*.out
+*.synctex.gz

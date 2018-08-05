@@ -38,13 +38,8 @@ class BetaParticle(Particle):
         Particle.__init__(self)
 
         self.parent = parent_state
-        self.particle = np.asarray(parent_state).flatten() # intiialised identically to parent
+        self.particle = np.asarray(parent_state).flatten() # COMMENT: Intiialised identically to parent
         self.total_nodes = int(float(len(parent_state)) / 4.0)
-
-        # print  
-        # print  "I'm a beta particle  in  BetaParticle, and my parent state is", parent_state
-        # print  
-        
         self.node_j = node_j
         self.neighbourhood_qj = []
         self.neighbour_dist_qj = []
@@ -52,10 +47,7 @@ class BetaParticle(Particle):
 
         self.x_j, self.y_j, self.f_j, self.r_j = self.particle[self.node_j::self.total_nodes]
 
-        self.mean_radius = radius #*3.0  # self.r_j*3.0  # equivalent statements
-        # print "Beta particle with radii = radius ", radius
-        # print "Beta particle intiated with radii = radius ", self.mean_radius
-
+        self.mean_radius = radius # TODO: * 3.0 
 
     def get_neighbourhood_qj(self):
         '''doc string'''
@@ -107,19 +99,18 @@ class AlphaParticle(Particle):
         self.pset_beta = 0
         self.node_j = 0.0
         self.SIG2_MEASR = 0.0
-        # self.mean_radius_j = 0.0 # TODO FIX THIS. CANT BE ONE NUMBER FORALL j
+
         self.BetaAlphaSet_j = None
 
-    def generate_beta_pset(self, parents, radii): #, number_of_beta_particles):
+    def generate_beta_pset(self, parents, radii):
         '''docstring'''
         beta_s = []
-        for idx in range(len(parents)):
+        for idx in range(len(parents)): # TODO: Use enumerate 
             state = parents[idx]
             radius = radii[idx]
             beta_s.append(BetaParticle(self.node_j, state, radius))
         self.BetaAlphaSet_j = ParticleSet(beta_s, **WEIGHTFUNCDICT_BETA)
-        # print "generate_beta_pset...."
-        # return BetaAlphaSet
+
 
 class ParticleSet(object):
     '''docstring'''
@@ -138,7 +129,7 @@ class ParticleSet(object):
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
             new_weight_set.append(new_weight)
-            
+
         raw_weights = np.asarray(new_weight_set).flatten()
         normalisation = 1.0/np.sum(raw_weights)
         return normalisation*raw_weights
@@ -158,9 +149,8 @@ class ParticleSet(object):
     def posterior_state(self):
         '''docstring'''
 
-        posterior_state=0.0
+        posterior_state = 0.0
         weight_sum = np.sum(self.weights_set)
         for idxp in range(self.p_set):
             posterior_state += self.particles[idxp].weight*self.particles[idxp].particle*(1.0/weight_sum)
-
         return posterior_state

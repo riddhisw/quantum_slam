@@ -27,23 +27,16 @@ DICTIONARIES
 
 import numpy as np
 
-GRIDDICT = { "QUBIT_1" : (1., 3.5),
-             "QUBIT_2" : (2., 3.5),
-             "QUBIT_3" : (3., 3.5),
-             "QUBIT_4" : (4., 3.5),
-             "QUBIT_5" : (5., 3.5),
-            # "QUBIT_6" : (4., 1.5),
-            # "QUBIT_7" : (2., 3.5),
-            # "QUBIT_8" : (4., 2.3),
-            # "QUBIT_9" : (3.7, 1.5),
-            # "QUBIT_10" : (3.2, 0.5),
-            # "QUBIT_11" : (3.5, 3.5),
-            # "QUBIT_12" : (4., 1.9)
+GRIDDICT = { "QUBIT_1" : (1., 0.0),
+             "QUBIT_2" : (2., 0.0),
+             "QUBIT_3" : (3., 0.0),
+             "QUBIT_4" : (4., 0.0),
+             "QUBIT_5" : (5., 0.0),
            }
 
 def gaussian_kernel(dist_jq, f_est_j, r_est_j):
     '''docstring'''
-    argument = -1.0*dist_jq**2 / (2.0*r_est_j**2)
+    argument = -1.0*dist_jq**2 / (2.0*r_est_j**2) # TODO : Revist whether there needs to be a normalisation factor
     kernel_val = f_est_j*np.exp(argument)
     return kernel_val
 
@@ -57,8 +50,19 @@ INITIALDICT = {"MU_W" : 0.0, # Qubit position noise mean (dynamics)
                "SIG2_F" : 0.1*np.pi**2, # True sigmoid approximation error variance
                "LAMBDA" : 0.99, # Forgetting factor for quasi-msmt information
                "GAMMA_T" : 10**8, # Re-sampling threshold
-               "P_ALPHA" : 3, # Number of alpha particles
-               "P_BETA" : 10, # Numer of beta particles for each alpha
+               "P_ALPHA" : 20, # Number of alpha particles
+               "P_BETA" : 40, # Numer of beta particles for each alpha
                "kernel_function" : gaussian_kernel
               }
-              
+
+CONTROLDICT = {"Test_0": [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],
+               "Test_1": [[0, 0]*15, [0, 1]*15, [0, 2]*15, [0, 3]*15, [0, 4]*15],
+               "Test_2": [ [0, 4]*5, [0, 4]*5 + [2], [0, 2, 4]*5 ],
+               "Test_3": [ [0, 4]*20, [0, 4]*20 + [2], [0, 2, 4]*20 ],
+              }
+
+NUM_QUBITS = len(GRIDDICT)
+
+TRUENOISE = {"Uniform": np.pi*0.8*np.ones(NUM_QUBITS), 
+             "Linear": np.arange(NUM_QUBITS) * np.pi/NUM_QUBITS
+            }
