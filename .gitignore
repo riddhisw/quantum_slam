@@ -1,6 +1,8 @@
 .vscode/
 Bug*/
 qslam_v0/
+notes/
+.ipynb*/
 
 *.npz
 *.pdf
