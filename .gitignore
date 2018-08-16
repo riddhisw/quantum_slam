@@ -1,3 +1,7 @@
+.vscode/
+Bug*/
+qslam_v0/
+
 *.npz
 *.pdf
 *.svg
