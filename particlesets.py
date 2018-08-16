@@ -128,10 +128,23 @@ class ParticleSet(object):
         new_weight_set = []
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
+            
+            if new_weight > self.p_set**4: # avoid inf
+                print "Large weight reset"
+                new_weight = self.p_set**4
+            
             new_weight_set.append(new_weight)
 
         raw_weights = np.asarray(new_weight_set).flatten()
-        normalisation = 1.0/np.sum(raw_weights)
+
+        unnormalised_total = np.sum(raw_weights)
+
+        if unnormalised_total == 0.0: # avoid zeros
+            print "Weights all zeros =", raw_weights
+            normalisation = 1.0
+            return normalisation*raw_weights
+
+        normalisation = 1.0/unnormalised_total
         return normalisation*raw_weights
 
     @property

@@ -23,7 +23,7 @@ from particlesets import AlphaParticle, ParticleSet, BetaParticle
 from particledict import WEIGHTFUNCDICT_ALPHA, WEIGHTFUNCDICT_BETA, update_alpha_dictionary
 from scipy.stats import mode
 from hardware import Node
-
+from control_action import controller
 
 class ParticleFilter(Grid):
     '''doctring
@@ -39,27 +39,84 @@ class ParticleFilter(Grid):
         empty_alpha_particles = [AlphaParticle() for idx in range(self.pset_alpha)]
         self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
         self.resample_thresh = INITIALDICT["GAMMA_T"]
+        self.measurements_controls = None
 
-    def qslamr(self, measurements_controls):
+    def qslamr(self, measurements_controls=None, autocontrol="OFF", 
+               cutoff_msmt=0, var_thres=1.0 ):
         '''docstring'''
 
         self.InitializeParticles()
+        run_variance = self.QubitGrid.get_all_nodes(["r_state_variance"])
+        print run_variance
 
-        for t_item in measurements_controls:
-            next_phys_msmt_j = t_item[0]
-            control_j = t_item[1]
-            self.ReceiveMsmt(control_j, next_phys_msmt_j)
-            self.PropagateState(control_j)
-            posterior_weights = self.ComputeWeights(control_j)
-            self.ResampleParticles(posterior_weights)
-            posterior_state = self.AlphaSet.posterior_state
-            self.QubitGrid.state_vector =  posterior_state.copy()*1.0 # COMMENT: Update node j neighbourhood and map estimate
-            self.update_qubitgrid_via_quasimsmts(control_j, posterior_state) # COMMENT: Sprinkle quasi msmts
+        if autocontrol == "OFF" and self.measurements_controls is None:
+            print "Auto-controller is off and no measurement control protocol is specified "
+            raise RuntimeError
+
+        if measurements_controls is not None:
+            self.measurements_controls = measurements_controls
+            PROTOCOL_ON = True
+
+        if autocontrol == "ON":
+            self.measurements_controls = [(0.0, 0.0)]
+            PROTOCOL_ON = True
+
+        max_msmts = max(len(self.measurements_controls), cutoff_msmt) # COMMENT: maximum no of msmts
+        stop_protocol = self.R_min**2 * var_thres * self.QubitGrid.number_of_nodes # COMMENT: threshold error variance is within the min inter-qubit separation
+
+        protocol_counter = 0
+        while PROTOCOL_ON == True:
+
+            msmt_control_pair = self.measurement_operation(autocontrol, 
+                                                           run_variance,
+                                                           protocol_counter)
+
+            self.particlefilter(msmt_control_pair)
+
+            if protocol_counter == max_msmts:
+                print "PROTOCOL - SAFE END - Max number of measurements taken"
+                PROTOCOL_ON = False
+
+            run_variance = self.QubitGrid.get_all_nodes(["r_state_variance"])
+
+            # if stop_protocol > np.sum(run_variance):
+            #     print "PROTOCOL - SAFE END - Error threshold %s satisfied by %s" %(stop_protocol, np.sum(run_variance))
+            #     PROTOCOL_ON = False
+
+            protocol_counter += 1
+
+    def measurement_operation(self, autocontrol, listofcontrolparameters, protocol_counter):
+        '''docstring'''
+
+        if autocontrol == "OFF":
+            return self.measurements_controls[protocol_counter]
+
+        elif autocontrol == "ON":
+            node_j = controller(listofcontrolparameters, number_of_nodes=1)[0] # TODO: adapt for arbiraty number of simultaneous msmts , number_of_nodes >1
+            print node_j
+            msmt_j = self.QubitGrid.measure_node(node_j)
+            print msmt_j
+            return np.asarray([msmt_j, node_j])
+
+
+    def particlefilter(self, msmt_control_pair):
+        '''docstring'''
+
+        next_phys_msmt_j = msmt_control_pair[0]
+        control_j = msmt_control_pair[1]
+
+        self.ReceiveMsmt(control_j, next_phys_msmt_j)
+        self.PropagateState(control_j)
+        posterior_weights = self.ComputeWeights(control_j)
+        self.ResampleParticles(posterior_weights)
+        posterior_state = self.AlphaSet.posterior_state
+        self.QubitGrid.state_vector =  posterior_state*1.0 # COMMENT: Update node j neighbourhood and map estimate
+        self.update_qubitgrid_via_quasimsmts(control_j, posterior_state) # COMMENT: Sprinkle quasi msmts
 
 #       ------------------------------------------------------------------------
 #       SMEARING ACTION VIA QUASI MEASUREMENTS
 #       ------------------------------------------------------------------------
-    
+
     def update_qubitgrid_via_quasimsmts(self, control_j, posterior_state):
         '''docstring
         this funciton should only be applied after lengthscales have been discovered
@@ -247,9 +304,12 @@ class ParticleFilter(Grid):
             if leaf_count != 0:
 
                 normaliser = (1./leaf_count)
+
+                # COMMENT: get some indices.
                 alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(leaves_of_subtree[0], self.pset_beta)
-                               # resampled_indices[subtree[0]], self.pset_beta)
+                self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = 0.0 # Reset
                 r_est_index = self.QubitGrid.number_of_nodes*3 + self.AlphaSet.particles[alpha_node].node_j
+
                 beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, self.pset_beta) for leafy in leaves_of_subtree]
                                # resampled_indices[subtree[0]:subtree[1]]]
                 # print "... ... The subtree has alpha node of: ", alpha_node
@@ -267,7 +327,7 @@ class ParticleFilter(Grid):
                     r_est_subtree_list.append(beta_lengthscale)
                 
                 # print "in collapse beta, r_est_subtree_list = ", r_est_subtree_list
-                r_est_subtree = ParticleFilter.calc_posterior_lengthscale(np.asarray(r_est_subtree_list)) # new posterior for alpha based on mode
+                r_est_subtree, r_est_subtree_variance = ParticleFilter.calc_posterior_lengthscale(np.asarray(r_est_subtree_list)) # new posterior for alpha based on mode
                 parent = self.AlphaSet.particles[alpha_node].particle.copy()*1.0
                 parent[r_est_index] = r_est_subtree
 
@@ -278,9 +338,16 @@ class ParticleFilter(Grid):
                 self.AlphaSet.particles[alpha_node].particle = parent*1.0
                 self.AlphaSet.particles[alpha_node].BetaAlphaSet_j = None
 
-                # New Alphas Stored
-                new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
+                # New Alphas Stored, control parameters updated
+                self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance += r_est_subtree_variance * normaliser
 
+                print "r_est_subtree_variance = ", r_est_subtree_variance
+                print "r_state_variance for node_j grid"
+                print self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance
+                print 
+                new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
+        
+        print "Print control parameterss", [nodevar.r_state_variance for nodevar in self.QubitGrid.nodes]
         return new_alpha_particle_list
 
 
@@ -297,8 +364,8 @@ class ParticleFilter(Grid):
     @staticmethod
     def calc_posterior_lengthscale(r_lengthscales_array):
         '''docstring'''
-        r_posterior_post_beta_collapse = ParticleFilter.calc_skew(r_lengthscales_array)
-        return r_posterior_post_beta_collapse
+        r_posterior_post_beta_collapse, r_posterior_variance = ParticleFilter.calc_skew(r_lengthscales_array)
+        return r_posterior_post_beta_collapse, r_posterior_variance
 
     @staticmethod
     def calc_skew(r_lengthscales_array):
@@ -308,14 +375,16 @@ class ParticleFilter(Grid):
         mode_, counts = mode(r_lengthscales_array)
         median_ = np.sort(r_lengthscales_array)[int(totalcounts/2) - 1] # TODO: not sure if this is median
 
+        variance = np.var(r_lengthscales_array)
+
         if mean_ < mode_ and counts > 1:
             # print "calc_skew gives skew left r, returning mode", mode_
-            return mode_
+            return mode_, variance
         if mean_ > mode_ and counts > 1:
             # print "calc_skew gives skew left r, returning mode", mode_
-            return mode_
+            return mode_, variance
         # print "calc_skew gives returns numerical mean", mean_
-        return mean_
+        return mean_, variance
 
 
     @staticmethod

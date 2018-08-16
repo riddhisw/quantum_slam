@@ -14,7 +14,7 @@ class Node(object):
 
         self._f_state = np.random.uniform(low=0.0, high=np.pi) # cant set _f_state
         self.r_state = 0.0
-        self.__r_state_skew = 0.0 
+        self.__r_state_variance = 10**4 # COMMENT: default value. Very large to make threshold. 
         self.x_state = 0.0
         self.y_state = 0.0
         self.counter_tau = 0
@@ -46,18 +46,12 @@ class Node(object):
     # PLACEHOLDER kew based control for SLAM
     ############################################################################
     @property
-    def r_state_skew(self):
+    def r_state_variance(self):
         '''docstring'''
-        return self.__r_state_skew
-    @r_state_skew.setter
-    def r_state_skew(self, skew_metric):
-        self.__physcmsmtsum = skew_metric
-    
-    @staticmethod
-    
-
-
-
+        return self.__r_state_variance
+    @r_state_variance.setter
+    def r_state_variance(self, skew_metric):
+        self.__r_state_variance = skew_metric
 
 
     ############################################################################
@@ -73,6 +67,7 @@ class Node(object):
             self._f_state = Node.inverse_born(prob_sample)
             return self._f_state
         # print "INVALID prob_sample value encountered in calling f_state", prob_sample
+        print prob_sample
         raise RuntimeError
 
     def sample_prob_from_msmts(self): # TODO Data Association
@@ -125,7 +120,7 @@ class Node(object):
 class Grid(object):
     '''docstring '''
 
-    def __init__(self, list_of_nodes_positions=None):
+    def __init__(self, list_of_nodes_positions=None, engineeredtruemap=None):
         if list_of_nodes_positions is None:
             print "No node positions specified"
             raise RuntimeError
@@ -135,6 +130,9 @@ class Grid(object):
         self.nodes = [Node() for i in range(self.number_of_nodes)]
         self.__state_vector = 0.0
         self.state_vector = np.zeros(self.number_of_nodes*len(PARTICLE_STATE))
+        
+        self.engineeredtruemap = engineeredtruemap
+        self.control_sequence = []
 
         for item in xrange(self.number_of_nodes):
             self.nodes[item].x_state, self.nodes[item].y_state = self.list_of_nodes_positions[item]
@@ -165,3 +163,14 @@ class Grid(object):
                 end = bgn + self.number_of_nodes
                 self.set_all_nodes(PARTICLE_STATE[state], new_state_vector[bgn:end])
 
+    def measure_node(self, node_j):
+        '''docstring'''
+
+        qubit_phase = self.engineeredtruemap[node_j]
+        # TODO: don't repeat the born rule here again. merge in qslamr
+        born_prob = np.cos(qubit_phase/2.)**2  # TODO: Perturb randomly for a real noise field.
+        msmt = np.random.binomial(1, born_prob)
+        
+        self.control_sequence.append(node_j)
+
+        return msmt
