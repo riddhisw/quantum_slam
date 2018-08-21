@@ -1,4 +1,21 @@
 '''
+Created on Thu Apr 20 19:20:43 2017
+@author: riddhisw
+
+.. module:: name
+
+    :synopsis: descrip.
+
+    Module Level Functions:
+    ----------------------
+        name : descrp.
+        name : descrp.
+        name : descrp.
+
+.. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
+'''
+
+'''
 MODULE: model_design
 
 Support dictionary of initial, transition and likelihood distributions for a
@@ -48,7 +65,7 @@ INITIALDICT = {"MU_W" : 0.0, # Qubit position noise mean (dynamics)
                "SIG2_MEASR" : 0.000000000001, # Map noise variance (measurement)
                "MU_F" : 0.0, # True sigmoid approximation error mean
                "SIG2_F" : 0.1*np.pi**2, # True sigmoid approximation error variance
-               "LAMBDA" : 0.99, # Forgetting factor for quasi-msmt information
+               "LAMBDA" : 0.99, # DONE # Forgetting factor for quasi-msmt information
                "GAMMA_T" : 10**8, # Re-sampling threshold
                "P_ALPHA" : 20, # Number of alpha particles
                "P_BETA" : 40, # Numer of beta particles for each alpha
