@@ -16,12 +16,12 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 
 import numpy as np
-import particledict as pd
-from model_design import GRIDDICT, INITIALDICT
+import particleweightcalcs as pd
+from qslamdesignparams import MODELDESIGN, PRIORDICT
 from hardware import Grid, PARTICLE_STATE
 from itertools import combinations
 from particlesets import AlphaParticle, ParticleSet, BetaParticle
-from particledict import WEIGHTFUNCDICT_ALPHA, WEIGHTFUNCDICT_BETA, update_alpha_dictionary
+from particleweightcalcs import WEIGHTFUNCDICT_ALPHA, WEIGHTFUNCDICT_BETA, update_alpha_dictionary
 from scipy.stats import mode
 from hardware import Node
 from control_action import controller
@@ -37,12 +37,13 @@ class ParticleFilter(Grid):
             tracking  posterior state estimates, physical and quasi measurements.
         dgrid (`float` | scalar):
             Max spatial pairwise separation for any two qubits on the Grid.
-        R_min (`float` | scalar):
+        d_iterq (`float` | scalar):
             Min spatial pairwise separation for any two qubits on the Grid.
-        R_max (`float` | scalar):
+        R_MAX (`float` | scalar):
             Upper bound on maximal correlation lengths physically expected in the system.
-            A  multiple greater that unity of dgrid.
-        INITIALDICT (Dictionary object):
+        R_MIN (`float` | scalar):
+            Lower bound on maximal correlation lengths physically expected in the system.
+        MODELDESIGN (Dictionary object):
             Stores a set of free parameters and initial conditions.
         pset_alpha (`int` | scalar):
             Total number of of Alpha particles (conserved during re-sampling).
@@ -55,7 +56,7 @@ class ParticleFilter(Grid):
         measurements_controls (`float` | dims: 2):
              External input for the most recent control directive and measurement
              outcome for the qubit, denoted by locaton index, node_j.
-        empty_alpha_particles = [AlphaParticle() for idx in range(self.pset_alpha)]
+        empty_alpha_particles = [AlphaParticle() for idx in range(self.MODELDESIGN["P_ALPHA"])]
         self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
 
     Class Methods:
@@ -64,7 +65,7 @@ class ParticleFilter(Grid):
         measurement_operation : Return measurement outcome and control directive
             i.e. the location of  the qubit node that is measured.
         particlefilter : Return next iteration of particle filtering algorithm after processing
-                    an input measurement outcome and control directive.
+            an input measurement outcome and control directive.
         update_qubitgrid_via_quasimsmts : Return the posterior neighbourhood associated
             with a qubit measurement at node_j and update all neighbours of node_j
             with quasi-measurement information from the posterior state estimates at node_j.
@@ -72,13 +73,14 @@ class ParticleFilter(Grid):
             set_init_alphaparticle : Set initial properties of an Alpha particle.
             Helper function to InitializeParticles().
         ReceiveMsmt : Updates global qubit hardware variables and properties of Alpha
-                    particles for a new measurement outcome and control directive.
+            particles for a new measurement outcome and control directive.
         PropagateState: Propagates all Alpha particle states according to (apriori) transition
-                propability distributions for propagating states between measurements.
-        ComputeWeights : Return posterior weights for the joint distribution defined over both
-                Alpha and Beta particles.
+            propability distributions for propagating states between measurements.
+        ComputeAlphaWeights : Return weights for the distribution defined over Alpha particles.
+        ComputePosteriorWeights : Return posterior weights for the joint distribution
+            defined over both Alpha and Beta particles.
         generate_beta_layer : Return a set of Beta particle weights for a given Alpha parent.
-            Helper function to ComputeWeights()
+            Helper function to ComputePosteriorWeights()
         sample_radii : Return a r_state sample from the prior distribution of r_states
             to generate a new Beta particle for a given Alpha parent.
             Helper function to generate_beta_layer().
@@ -86,11 +88,11 @@ class ParticleFilter(Grid):
             for a candidate Beta particle and its Alpha parent. Helper function
             to generate_beta_layer().
         ResampleParticles : Return a new set of Alpha particles with uniform weights resampled
-                according to the joint probability of both Alpha and Beta particles, subject to
-                conserving Alpha particle number.
+            according to the joint probability of both Alpha and Beta particles, subject to
+            conserving Alpha particle number.
         collapse_beta: Return resampled Alpha parents with collapsed Beta layers. For each Alpha
-                parent, store the mode and the spread of r_states in Beta-Particle layer as
-                the posterior r_state at node_j. Helper function for ResampleParticles().
+            parent, store the mode and the spread of r_states in Beta-Particle layer as
+            the posterior r_state at node_j. Helper function for ResampleParticles().
         effective_particle_size : Return effective particle number based on posterior weight
             variances for adapative resampling. [Currently not used].
 
@@ -123,26 +125,24 @@ class ParticleFilter(Grid):
         set_uniform_prior_for_correlation (static method) : Return max qubit pairwise separation
             on hardware, and lower and upper bounds on uniform distribution of r_states as a prior.
         get_subtrees (static method) : Return a list of  pairs of (start, end) for a sub-tree
-                where each sub-tree represents an Alpha particle, and its element
-                leaves represent suriviving resampled Beta particles.
-                Helper function for ResampleParticles.
+            where each sub-tree represents an Alpha particle, and its element
+            leaves represent suriviving resampled Beta particles.
+            Helper function for ResampleParticles.
 
     '''
 
-    def __init__(self, list_of_nodes_positions, **INITIALDICT):
+    def __init__(self, list_of_nodes_positions,**MODELDESIGN):
 
         self.QubitGrid = Grid(list_of_nodes_positions=list_of_nodes_positions)
-        self.dgrid, self.R_min, self.R_max = ParticleFilter.set_uniform_prior_for_correlation(self.QubitGrid.list_of_nodes_positions)
-        self.INITIALDICT = INITIALDICT
-        self.pset_alpha = self.INITIALDICT["P_ALPHA"]
-        self.pset_beta = self.INITIALDICT["P_BETA"]
-        empty_alpha_particles = [AlphaParticle() for idx in range(self.pset_alpha)]
+        self.dgrid, self.diterq, self.R_MIN, self.R_MAX = ParticleFilter.set_uniform_prior_for_correlation(self.QubitGrid.list_of_nodes_positions)
+        self.MODELDESIGN = MODELDESIGN
+        empty_alpha_particles = [AlphaParticle() for idx in range(self.MODELDESIGN["P_ALPHA"])]
         self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
-        self.resample_thresh = INITIALDICT["GAMMA_T"]
+        # self.resample_thresh = MODELDESIGN["GAMMA_T"]
         self.measurements_controls = None
 
-    def qslamr(self, measurements_controls=None, autocontrol="OFF", 
-               cutoff_msmt=0, var_thres=1.0 ):
+    def qslamr(self, measurements_controls=None, autocontrol="OFF",
+               cutoff_msmt=0, var_thres=1.0):
         ''' Execute core numerical SLAM solver for qslamr module.
         Parameters:
         ----------
@@ -167,16 +167,19 @@ class ParticleFilter(Grid):
             self.measurements_controls = [(0.0, 0.0)]
             PROTOCOL_ON = True
 
-        max_msmts = max(len(self.measurements_controls), cutoff_msmt) # COMMENT: maximum no of msmts
-        stop_protocol = self.R_min**2 * var_thres * self.QubitGrid.number_of_nodes # COMMENT: threshold error variance is within the min inter-qubit separation
-        
+        # COMMENT: maximum no of msmts
+        max_msmts = max(len(self.measurements_controls), cutoff_msmt)
+
+        # COMMENT: threshold error variance is within the min inter-qubit separation
+        stop_protocol = self.R_MIN**2 * var_thres * self.QubitGrid.number_of_nodes
+
         next_control_neighbourhood = range(0, self.QubitGrid.number_of_nodes)
-        
+
         protocol_counter = 0
         while PROTOCOL_ON == True:
 
-            msmt_control_pair = self.measurement_operation(autocontrol, 
-                                                           run_variance, 
+            msmt_control_pair = self.measurement_operation(autocontrol,
+                                                           run_variance,
                                                            protocol_counter,
                                                            next_control_neighbourhood=next_control_neighbourhood)
 
@@ -191,7 +194,8 @@ class ParticleFilter(Grid):
             # print run_variance
 
             # if stop_protocol > np.sum(run_variance):
-            #     print "PROTOCOL - SAFE END - Error threshold %s satisfied by %s" %(stop_protocol, np.sum(run_variance))
+            #     print "PROTOCOL - SAFE END - Error threshold %s satisfied by %s"
+            # %(stop_protocol, np.sum(run_variance))
             #     PROTOCOL_ON = False
 
             protocol_counter += 1
@@ -213,10 +217,17 @@ class ParticleFilter(Grid):
             return self.measurements_controls[protocol_counter]
 
         elif autocontrol == "ON":
-            node_j = controller(listofcontrolparameters, next_control_neighbourhood, number_of_nodes=1)[0] # TODO: adapt for arbiraty number of simultaneous msmts , number_of_nodes >1
-            msmt_j = self.QubitGrid.measure_node(node_j)
+            node_j = controller(listofcontrolparameters,
+                                next_control_neighbourhood,
+                                number_of_nodes=1)[0]
+            # TODO: adapt for arbiraty number of simultaneous msmts , number_of_nodes > 1
+
+            msmtset_j = []
+            for idx_msmt in range(self.MODELDESIGN["MSMTS_PER_NODE"]):
+                msmt_j = self.QubitGrid.measure_node(node_j)
+                msmtset_j.append(msmt_j)
             print "Autocontroller chose node: ", node_j, " , with measurement result,", msmt_j
-            return np.asarray([msmt_j, node_j])
+            return [msmtset_j, node_j]
 
 
     def particlefilter(self, msmt_control_pair):
@@ -230,16 +241,38 @@ class ParticleFilter(Grid):
         -------
         '''
 
-        next_phys_msmt_j = msmt_control_pair[0]
+        msmtset_j = msmt_control_pair[0]
         control_j = msmt_control_pair[1]
 
-        self.ReceiveMsmt(control_j, next_phys_msmt_j)
-        self.PropagateState(control_j)
-        posterior_weights = self.ComputeWeights(control_j)
-        self.ResampleParticles(posterior_weights)
+        ###### BEGIN MSMT LOOP / ESTIMATE LOCALLY
+
+        for next_phys_msmt_j in msmtset_j:
+
+            self.ReceiveMsmt(control_j, next_phys_msmt_j)
+
+            for alpha_particle in self.AlphaSet.particles:
+                alpha_particle.pset_beta = self.MODELDESIGN["P_BETA"]
+                alpha_particle.node_j = control_j
+
+            self.PropagateState(control_j)
+            self.ComputeAlphaWeights()
+            # self.QubitGrid.state_vector = self.AlphaSet.posterior_state*1.0 # ?????
+            # Dont update the posterior state as the full posterior
+            # has not been computed.
+        
+        ###### END  MSMT LOOP / ESTIMATE LOCALLY
+
+        ###### SHARE WITH NEIGHBOURHOOD / SMOOTHEN GLOBALLY
+        posterior_weights = self.ComputePosteriorWeights(control_j)
+        self.ResampleParticles(posterior_weights) # no QubitGrid update
+
+        # COMMENT: Update node j neighbourhood and map estimate
         posterior_state = self.AlphaSet.posterior_state
-        self.QubitGrid.state_vector =  posterior_state*1.0 # COMMENT: Update node j neighbourhood and map estimate
-        next_control_neighbourhood = self.update_qubitgrid_via_quasimsmts(control_j, posterior_state) # COMMENT: Sprinkle quasi msmts
+        self.QubitGrid.state_vector = posterior_state*1.0
+
+        # COMMENT: Sprinkle quasi msmts / share info with neighbours.
+        next_control_neighbourhood = self.update_qubitgrid_via_quasimsmts(control_j,
+                                                                          posterior_state)
 
         return next_control_neighbourhood # neighbourhood of next control action.
 
@@ -282,7 +315,8 @@ class ParticleFilter(Grid):
                 print "...was invalid, q_phase ", quasi_phase_q
                 print "... no quasi_msmts were added."
 
-        return posterior_beta_particle.neighbourhood_qj # neighbourhood of next control action
+        # neighbourhood of next control action
+        return posterior_beta_particle.neighbourhood_qj
 #       ------------------------------------------------------------------------
 #       SUPPORT FUNCTION 1: INITIALISE AND SAMPLE AT t = 0
 #       ------------------------------------------------------------------------
@@ -306,24 +340,26 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
-        # TODO : Set I.C. in set_init_alphaparticle()
-        sample_x = self.QubitGrid.get_all_nodes(["x_state"]) # TODO: Set I.C.
-        sample_y = self.QubitGrid.get_all_nodes(["y_state"]) # TODO: Set I.C.
 
-        # Comment: randomised if msmts are absent
-        sample_f = self.QubitGrid.get_all_nodes(["f_state"]) # TODO: Set I.C. in this module not hardware.Node
-        sample_r = np.ones(self.QubitGrid.number_of_nodes)*ParticleFilter.sample_radii(self, previous_length_scale=self.R_min) # TODO: Set I.C.
-        alphaparticle.particle = np.concatenate((sample_x, sample_y, sample_f, sample_r),
-                                                axis=0) # TODO: Set I.C.
+        PRIORDICT["SAMPLE_R"]["ARGS"]["R_MIN"] = self.R_MIN
+        PRIORDICT["SAMPLE_R"]["ARGS"]["R_MAX"] = self.R_MAX
+        size = self.QubitGrid.number_of_nodes
 
-        alphaparticle.pset_beta = self.INITIALDICT["P_BETA"]
+        substate_list = []
+        for idx_key in PRIORDICT.keys():
+            PRIORDICT[idx_key]["ARGS"]["SIZE"] = size
+            samples = PRIORDICT[idx_key]["FUNCTION"](PRIORDICT[idx_key]["ARGS"])
+            substate_list.append(samples)
+
+        alphaparticle.particle = np.asarray(substate_list).flatten()
+        alphaparticle.pset_beta = self.MODELDESIGN["P_BETA"]
 
 #       ------------------------------------------------------------------------
 #       SUPPORT FUNCTION 2: RECEIVE MSMT
 #       ------------------------------------------------------------------------
 
-    def ReceiveMsmt(self, control_j, next_phys_msmt_j):
-        ''' Updates global qubit hardware variables and properties of Alpha 
+    def ReceiveMsmt(self,control_j, next_phys_msmt_j):
+        ''' Updates global qubit hardware variables and properties of Alpha
             particles for a new measurement outcome and control directive.
 
         Parameters:
@@ -336,10 +372,6 @@ class ParticleFilter(Grid):
         self.QubitGrid.nodes[control_j].physcmsmtsum = next_phys_msmt_j
         prob_j = self.QubitGrid.nodes[control_j].sample_prob_from_msmts()
         update_alpha_dictionary(next_phys_msmt_j, prob_j)
-
-        for alpha_particle in self.AlphaSet.particles:
-            alpha_particle.pset_beta = self.INITIALDICT["P_BETA"]
-            alpha_particle.node_j = control_j
 
 #       ------------------------------------------------------------------------
 #       SUPPORT FUNCTION 3: PROPAGATE (ALPHA) STATES
@@ -378,8 +410,19 @@ class ParticleFilter(Grid):
 #       ------------------------------------------------------------------------
 #       SUPPORT FUNCTION 4: COMPUTE ALPHA WEIGHTS; GENERATE BETA WEIGHTS
 #       ------------------------------------------------------------------------
+    def ComputeAlphaWeights(self):
+        ''' Update weights for the distribution defined over Alpha particles.
 
-    def ComputeWeights(self, control_j):
+        Parameters:
+        ----------
+
+        Returns:
+        -------
+        '''
+        new_alpha_weights = self.AlphaSet.calc_weights_set() # Normlaised
+        self.AlphaSet.weights_set = new_alpha_weights
+
+    def ComputePosteriorWeights(self, control_j):
         ''' Return posterior weights for the joint distribution defined over both
         Alpha and Beta particles.
 
@@ -389,15 +432,13 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
-
-        new_alpha_weights = self.AlphaSet.calc_weights_set() # Normlaised
-        self.AlphaSet.weights_set = new_alpha_weights
         f_state_index = 2*self.QubitGrid.number_of_nodes + control_j
 
         posterior_weights = []
 
         for alpha_particle in self.AlphaSet.particles:
-            alpha_particle.particle[f_state_index] = self.QubitGrid.nodes[control_j].f_state # self.update_alpha_map_via_born_rule(control_j)
+
+            alpha_particle.particle[f_state_index] = self.QubitGrid.nodes[control_j].f_state
             beta_alpha_j_weights = self.generate_beta_layer(alpha_particle)
             posterior_weights.append(alpha_particle.weight*beta_alpha_j_weights)
 
@@ -410,12 +451,12 @@ class ParticleFilter(Grid):
 
     def generate_beta_layer(self, alpha_particle):
         ''' Return a set of Beta particle weights for a given Alpha parent. Helper
-            function to ComputeWeights().
+            function to ComputePosteriorWeights().
         Parameters:
         ----------
 
         Returns:
-        -------    
+        -------
         '''
 
         len_idx = self.QubitGrid.number_of_nodes*3 + alpha_particle.node_j
@@ -426,7 +467,10 @@ class ParticleFilter(Grid):
         list_of_length_samples = []
         for idx_beta in range(alpha_particle.pset_beta):
 
-            new_length_sample = self.sample_radii() # TODO : shouldnt this depend on previous lengthscales? not making use of prior knolwegde. 
+            new_length_sample = self.sample_radii()
+            # TODO : shouldnt this depend on previous lengthscales?
+            # Not making use of prior knolwegde.
+            # Previous lengthscale sets neighbourhood.
             new_beta_state[len_idx] = new_length_sample*1.0
             list_of_parent_states.append(new_beta_state.copy())
             list_of_length_samples.append(new_length_sample)
@@ -456,19 +500,21 @@ class ParticleFilter(Grid):
         if previous_length_scale < 0:
             print "Previous length scale is less than zero:", previous_length_scale
             raise RuntimeError
-        lower_bound = (previous_length_scale + self.R_min)*0.1 + self.R_min # TODO: Redsign prior for sampling radii. convoluution of uniform with Gaussian mean centered at r_state (previous)
-        sample = np.random.uniform(low=lower_bound, high=self.R_max)
-        return sample #(self.R_min + self.R_max)*0.5
-        
+        lower_bound = (previous_length_scale + self.R_MIN)*0.1 + 0.9*self.R_MIN
+        # TODO: Redsign prior for sampling radii.
+        # convoluution of uniform with Gaussian mean centered at r_state (previous)
+        sample = np.random.uniform(low=lower_bound, high=self.R_MAX)
+        return sample #(self.R_MIN + self.R_MAX)*0.5
+
     def generate_beta_neighbourhood(self, BetaParticle):
-        ''' Generate phase estimates over a neighbourhood for input Beta particle 
+        ''' Generate phase estimates over a neighbourhood for input Beta particle
             and its Alpha parent. Helper function to generate_beta_layer().
          '''
 
         NEIGHBOURDICT = {"prev_posterior_f_state" : self.QubitGrid.get_all_nodes(["f_state"]),
                          "prev_counter_tau_state" : self.QubitGrid.get_all_nodes(["counter_tau"]),
-                         "lambda_" : self.INITIALDICT["LAMBDA"],
-                         "kernel_function": self.INITIALDICT["kernel_function"]}
+                         "lambda_" : self.MODELDESIGN["LAMBDA_2"],
+                         "kernel_function": self.MODELDESIGN["kernel_function"]}
 
         BetaParticle.smear_fj_on_neighbours(**NEIGHBOURDICT)
 
@@ -487,18 +533,25 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
-        # resampled_idx = np.arange(self.pset_alpha*self.pset_beta)
+        # resampled_idx = np.arange(self.MODELDESIGN["P_ALPHA"]*self.MODELDESIGN["P_BETA"])
 
         # COMMENT: if self.resample_thresh > self.effective_particle_size(posterior_weights):
-        resampled_idx = ParticleFilter.resample_constant_pset_alpha(posterior_weights, self.pset_alpha, self.pset_beta)
-        print "Unsorted I : ", resampled_idx
-        # new_alpha_subtrees = self.get_subtrees(resampled_idx, self.pset_beta)
-        new_alpha_subtrees = self.get_subtrees(resampled_idx, self.pset_beta)
-        print "Unsorted II : ", resampled_idx
+        resampled_idx = ParticleFilter.resample_constant_pset_alpha(posterior_weights,
+                                                                    self.MODELDESIGN["P_ALPHA"],
+                                                                    self.MODELDESIGN["P_BETA"])
+        # print "Unsorted I : ", resampled_idx
+
+        # new_alpha_subtrees = self.get_subtrees(resampled_idx, self.MODELDESIGN["P_BETA"])
+        new_alpha_subtrees = self.get_subtrees(resampled_idx, self.MODELDESIGN["P_BETA"])
+        # print "Unsorted II : ", resampled_idx
         new_alpha_list = self.collapse_beta(new_alpha_subtrees, resampled_idx)
-        
-        self.AlphaSet.particles = new_alpha_list # COMMENT: garanteed to be pset_alpha with no second layer
-        self.AlphaSet.weights_set = (1.0/self.pset_alpha)*np.ones(self.pset_alpha) # COMMENT: Resampled, uniform weights
+
+        # COMMENT: garanteed to be pset_alpha with no second layer
+        self.AlphaSet.particles = new_alpha_list
+
+        # COMMENT: Resampled, uniform weights
+        uniformprob = (1.0/self.MODELDESIGN["P_ALPHA"])
+        self.AlphaSet.weights_set = uniformprob*np.ones(self.MODELDESIGN["P_ALPHA"])
 
 
     def collapse_beta(self, subtree_list, resampled_indices):
@@ -519,9 +572,14 @@ class ParticleFilter(Grid):
         for subtree in subtree_list:
 
             leaves_of_subtree = resampled_indices[subtree[0]:subtree[1]]
-            # TODO: SUGGEST resampled_indices.sort()[subtree[0]:subtree[1]]  - why are these sorted already?
-            # TODO : POTENTIAL ERROR : get_subtrees acts on a sorted list of resampled_indices to define subtrees
-            # TODO : (cont'd) : but subtree in this function acts on an unsorted list of resampled_indices.
+
+            # TODO: SUGGEST resampled_indices.sort()[subtree[0]:subtree[1]]
+            # - why are these sorted already? This is due to the use of sort().
+            # and some namespace issues.
+            # POTENTIAL ERROR : get_subtrees acts on a sorted list of
+            # resampled_indices to define subtrees
+            # but subtree in this function acts on an unsorted
+            # list of resampled_indices.
 
             leaf_count = float(len(leaves_of_subtree))
             # print "... ... The subtree is defined by the endpoint index boundaries", subtree
@@ -532,33 +590,40 @@ class ParticleFilter(Grid):
                 normaliser = (1./leaf_count)
 
                 # COMMENT: get some indices.
-                alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(leaves_of_subtree[0], self.pset_beta)
-                self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = 0.0 # Reset
+                alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(leaves_of_subtree[0],
+                                                                         self.MODELDESIGN["P_BETA"])
+                # Reset
+                self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = 0.0
                 r_est_index = self.QubitGrid.number_of_nodes*3 + self.AlphaSet.particles[alpha_node].node_j
 
-                beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, self.pset_beta) for leafy in leaves_of_subtree]
+                beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, self.MODELDESIGN["P_BETA"]) for leafy in leaves_of_subtree]
                                # resampled_indices[subtree[0]:subtree[1]]]
                 # print "... ... The subtree has alpha node of: ", alpha_node
-                # print "... ... The leaves of the subtree are labeled by beta indices", beta_alpha_nodes
+                # print "... ... The leaves of the subtree are labeled by beta indices",
+                # print beta_alpha_nodes
                 r_est_subtree_list = []
 
                 for node in beta_alpha_nodes:
 
                     beta_state = self.AlphaSet.particles[alpha_node].BetaAlphaSet_j.particles[node].particle.copy()
                     beta_lengthscale = beta_state[r_est_index]*1.0
-                    if np.isnan(beta_lengthscale): 
+                    if np.isnan(beta_lengthscale):
                         # print "A resampled beta_lengthscale has an invalid value"
                         raise RuntimeError
-                    # r_est_subtree += normaliser*beta_lengthscale # collapses beta layer by taking the mean
+
+                    # # collapses beta layer by taking the mean
+                    # r_est_subtree += normaliser*beta_lengthscale
                     r_est_subtree_list.append(beta_lengthscale)
 
                 # print "in collapse beta, r_est_subtree_list = ", r_est_subtree_list
-                r_est_subtree, r_est_subtree_variance = ParticleFilter.calc_posterior_lengthscale(np.asarray(r_est_subtree_list)) # new posterior for alpha based on mode
+
+                # COMMENT: new posterior for alpha based on mode
+                r_est_subtree, r_est_subtree_variance = ParticleFilter.calc_posterior_lengthscale(np.asarray(r_est_subtree_list)) 
                 parent = self.AlphaSet.particles[alpha_node].particle.copy()*1.0
                 parent[r_est_index] = r_est_subtree
 
                 if np.any(np.isnan(parent)):
-                    # print "A resampled parent particle has an invalid value"
+                    print "A resampled parent particle has an invalid value."
                     raise RuntimeError
 
                 self.AlphaSet.particles[alpha_node].particle = parent*1.0
@@ -568,19 +633,15 @@ class ParticleFilter(Grid):
                 self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance += r_est_subtree_variance * normaliser
 
                 # print "r_est_subtree_variance = ", r_est_subtree_variance
-                # print "r_state_variance for node_j grid"
-                # print self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance
-
                 new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
 
-        # print "Print control parameterss", [nodevar.r_state_variance for nodevar in self.QubitGrid.nodes]
         return new_alpha_particle_list
 
 
     def effective_particle_size(self, posterior_weights):
         '''Return effective particle number based on posterior weight variances
         for adapative resampling. [Currently not used].
-        
+
         Parameters:
         ----------
 
@@ -597,7 +658,7 @@ class ParticleFilter(Grid):
 
     @staticmethod
     def calc_posterior_lengthscale(r_lengthscales_array):
-        '''Return descriptive moments for the distribution of r_states in a 
+        '''Return descriptive moments for the distribution of r_states in a
         Beta particle set for an Alpha parent, post resampling.
         Helper function for collapse_beta().
 
@@ -623,7 +684,8 @@ class ParticleFilter(Grid):
         totalcounts = len(r_lengthscales_array)
         mean_ = np.mean(r_lengthscales_array)
         mode_, counts = mode(r_lengthscales_array)
-        median_ = np.sort(r_lengthscales_array)[int(totalcounts/2) - 1] # TODO: not sure if this is median
+        median_ = np.sort(r_lengthscales_array)[int(totalcounts/2) - 1]
+        # TODO: not sure if this is median
 
         variance = np.var(r_lengthscales_array)
 
@@ -639,15 +701,17 @@ class ParticleFilter(Grid):
 
     @staticmethod
     def compute_dist(one_pair):
-        '''Return Euclidean distance between two points. 
+        '''Return Euclidean distance between two points.
         Helper function for ParticleFilter.get_distances().'''
         xval, yval = one_pair
         return np.sqrt((xval[0] - yval[0])**2 + (xval[1] - yval[1])**2)
 
     @staticmethod
     def get_distances(list_of_positions):
-        '''Return all pairwise distances between an arrangement of qubits.  
-        Helper function for ParticleFilter.find_max_distance() and ParticleFilter.find_min_distance.'''
+        '''Return all pairwise distances between an arrangement of qubits.
+        Helper function for ParticleFilter.find_max_distance() and
+        ParticleFilter.find_min_distance.
+        '''
         distance_pairs = [a_pair for a_pair in combinations(list_of_positions, 2)]
         distances = [ParticleFilter.compute_dist(one_pair)for one_pair in distance_pairs]
         return distances, distance_pairs
@@ -667,21 +731,24 @@ class ParticleFilter(Grid):
     @staticmethod
     def set_uniform_prior_for_correlation(list_of_positions, multiple=10):
         '''Return max qubit pairwise separation  on hardware, and lower and upper
-        bounds on uniform distribution of r_states as a prior. 
+        bounds on uniform distribution of r_states as a prior.
         Parameters:
         ----------
 
         Returns:
         -------
-        ''' # TODO : Justify choice of multiple. 
-        d_grid,_ = ParticleFilter.find_max_distance(list_of_positions)
-        R_max = multiple*d_grid
-        R_min,_  = ParticleFilter.find_min_distance(list_of_positions)
-        return d_grid, R_min, R_max # d_grid, R_min, R_max
+        '''
+
+        d_grid, _ = ParticleFilter.find_max_distance(list_of_positions)
+        diterq, _ = ParticleFilter.find_min_distance(list_of_positions)
+
+        R_MAX = d_grid * self.MODELDESIGN["MULTIPLER_R_MAX"]
+        R_MIN = diterq * self.MODELDESIGN["MULTIPLER_R_MIN"]
+        return d_grid, diterq, R_MIN, R_MAX
 
     @staticmethod
     def get_alpha_node_from_treeleaf(leaf_index, pset_beta):
-        '''Return Alpha Particle index based on global index for flattened layers 
+        '''Return Alpha Particle index based on global index for flattened layers
         of Alpha-Beta particles. Helper function for collapse_beta().
         Parameters:
         ----------
@@ -694,7 +761,7 @@ class ParticleFilter(Grid):
 
     @staticmethod
     def get_beta_node_from_treeleaf(leaf_index, pset_beta):
-        '''Return Beta Particle index based on global index for flattened layers 
+        '''Return Beta Particle index based on global index for flattened layers
         of Alpha-Beta particles. Helper function for collapse_beta().
         Parameters:
         ----------
@@ -707,7 +774,7 @@ class ParticleFilter(Grid):
 
     @staticmethod
     def resample_from_weights(posterior_weights, number_of_samples):
-        ''' Return samples from the posterior distribution of states approximated 
+        ''' Return samples from the posterior distribution of states approximated
         by a discrete set of posterior normalised weights.
         Helper function for static method ParticleFilter.resample_constant_pset_alpha().
         Parameters:
@@ -753,29 +820,32 @@ class ParticleFilter(Grid):
         num_of_samples = pset_alpha
         total_particles = len(posterior_weights)
 
-        if total_particles != int(INITIALDICT["P_ALPHA"]*INITIALDICT["P_BETA"]):
+        if total_particles != int(MODELDESIGN["P_ALPHA"]*MODELDESIGN["P_BETA"]):
             raise RuntimeError
 
         while sufficient_sample is False:
 
-            num_of_samples += 5 # increase number of samples until you have a unique alphas --- TODO -- is conserving alpha particle number discarding data unfairly? MAYBE!!
-            resampled_indices = ParticleFilter.resample_from_weights(posterior_weights, num_of_samples)
+            # increase number of samples until you have a unique alphas
+            # TODO -- is conserving alpha particle number discarding data unfairly? MAYBE!!
+            num_of_samples += 5 
+            resampled_indices = ParticleFilter.resample_from_weights(posterior_weights,
+                                                                     num_of_samples)
             resampled_alphas = [ParticleFilter.get_alpha_node_from_treeleaf(leafy, pset_beta) for leafy in resampled_indices]
             unique_alphas = set(list(resampled_alphas))
             if len(unique_alphas) == pset_alpha:
                 sufficient_sample = True
-        
+
         # print "These resampled indicies should be unsorted."
         # print resampled_indices # -- AFFIRMED
         print "Unsorted 0 : ", resampled_indices
         return resampled_indices
 
     @staticmethod
-    def get_subtrees(resampled_indices, pset_beta):  
+    def get_subtrees(resampled_indices, pset_beta):
         '''
-        Return a list of  pairs of (start, end) for a sub-tree 
+        Return a list of  pairs of (start, end) for a sub-tree
         where each sub-tree represents an Alpha particle, and its element
-        leaves represent suriviving resampled Beta particles. 
+        leaves represent suriviving resampled Beta particles.
         Helper function for ResampleParticles.
         Parameters:
         ----------
@@ -786,13 +856,19 @@ class ParticleFilter(Grid):
 
 
         new_sub_trees = []
-        # resampled_indices = np.sort(np.asarray(resampled_indices)) # sorted list TODO: Behaves as normal and breaks qslamr since we do not resort indices in collapse_beta()
-        resampled_indices.sort() # sorted list TODO: SUPER WEIRD. MAKES IT CHANGE resampled_indices outside of function space.
+        # resampled_indices = np.sort(np.asarray(resampled_indices)) # sorted list
+        # TODO: Behaves as normal and breaks qslamr since we do not resort indices
+        # in collapse_beta()
+        resampled_indices.sort() # sorted list
+        # TODO: SUPER WEIRD. MAKES IT CHANGE resampled_indices
+        # outside of function space.
         alpha_index_0 = None
         strt_counter = 0
         end_counter = 0
 
-        for idx in resampled_indices: # TODO : double check if this is still a sorted version of the original list.
+        for idx in resampled_indices: 
+            # TODO : double check if this is still a sorted version of the
+            # original list.
 
             alpha_index = ParticleFilter.get_alpha_node_from_treeleaf(idx, pset_beta)
             beta_alpha_idx = ParticleFilter.get_beta_node_from_treeleaf(idx, pset_beta)
@@ -804,8 +880,10 @@ class ParticleFilter(Grid):
 
                 new_sub_trees.append([strt_counter, end_counter])
 
-                alpha_index_0 = alpha_index # TODO : double check this assignement for view vs copy
-                strt_counter = end_counter # TODO : double check this assignement for view vs copy
+                alpha_index_0 = alpha_index 
+                # TODO : double check this assignement for view vs copy
+                strt_counter = end_counter 
+                # TODO : double check this assignement for view vs copy
                 end_counter += 1
 
         if end_counter == len(resampled_indices):
