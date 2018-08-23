@@ -43,7 +43,7 @@ Created on Thu Apr 20 19:20:43 2017
 .. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 
-from model_design import INITIALDICT
+from qslamdesignparams import NOISEPARAMS
 from scipy.special import erf
 import numpy as np
 
@@ -85,7 +85,7 @@ def likelihood_func_alpha(**args):
             Single qubit binary (0 or 1) measurement at `j`-th node.
         args["prob_j"] (`float64`, scalar):
             Sample probability at `j`-th node over physical and quasi measurements.
-        args["SIG2_MEASR"] (`float64`, scalar):
+        args["SIGMA"] (`float64`, scalar):
             Measurement noise variance strength for quantised measurement
                 outcomes.
     Returns:
@@ -96,7 +96,7 @@ def likelihood_func_alpha(**args):
 
     msmt_dj = args["msmt_dj"]
     prob_j = args["prob_j"]
-    var_r = args["SIG2_MEASR"]
+    var_r = args["SIGMA"]
     rho_0 = rho(0.5, var_r)
 
     alpha_likelihood_score = rho_0 / 2.0
@@ -107,8 +107,8 @@ def likelihood_func_alpha(**args):
     return alpha_likelihood_score
 
 LIKELIHOOD_ALPHA = {"l_func" : likelihood_func_alpha,
-                    "l_args" : {"MU_MEASR" : INITIALDICT["MU_MEASR"], # TODO: carefully define noise inputs
-                                "SIG2_MEASR" : INITIALDICT["SIG2_MEASR"], # TODO: carefully define noise inputs
+                    "l_args" : {"MU" : NOISEPARAMS["QUANTISATION_UNCERTY"]["MU"],
+                                "SIGMA" : NOISEPARAMS["QUANTISATION_UNCERTY"]["SIGMA"],
                                 "msmt_dj" : -10.0, # TODO: update via PF
                                 "prob_j" : -10.0 # TODO: update via PF
                                }}
@@ -174,14 +174,14 @@ def update_alpha_dictionary(next_phys_msmt_j, prob_j):
 ###############################################################################
 
 def likelihood_func_beta(**args):
-    ''' Return the likelihood score for a beta particle that depends on 
-        lengthscale and phase estimate between a pair of qubits. 
+    ''' Return the likelihood score for a beta particle that depends on
+        lengthscale and phase estimate between a pair of qubits.
 
     Parameters:
     ----------
-        args["mu_f"] (`float64`, scalar):
+        args["MU"] (`float64`, scalar):
             True process noise mean (unknown but discovered via optimisation?)
-        args["sigma_f"] (`float64`, scalar):
+        args["SIGMA"] (`float64`, scalar):
             True process noise covariance scale (unknown but discovered via optimisation?)
         args["new_phase"] (`float64`, scalar):
             Sigmoid smoothened phase from `j` to its neighbourhood at `q`.
@@ -191,11 +191,11 @@ def likelihood_func_beta(**args):
 
     Returns:
     -------
-        Likelihood score for a beta particle that depends on lengthscale and 
-            phase estimate between a pair of qubits. 
+        Likelihood score for a beta particle that depends on lengthscale and
+            phase estimate between a pair of qubits.
     '''
-    mean = args["mu_f"]
-    variance = args["sigma_f"]
+    mean = args["MU"]
+    variance = args["SIGMA"]
     new_phase = args["new_phase"]
     old_phase = args["old_phase"]
     prefactor = 1.0 / np.sqrt(2.0 * np.pi * variance)
@@ -204,8 +204,8 @@ def likelihood_func_beta(**args):
     return result
 
 LIKELIHOOD_BETA = {"l_func": likelihood_func_beta,
-                   "l_args": {"sigma_f" : INITIALDICT["SIG2_F"], # TODO: carefully define noise inputs
-                              "mu_f" : INITIALDICT["MU_F"], # TODO: carefully define noise inputs
+                   "l_args": {"SIGMA" : NOISEPARAMS["SIGMOID_APPROX_ERROR"]["SIGMA"],
+                              "MU" : NOISEPARAMS["SIGMOID_APPROX_ERROR"]["MU"],
                               "new_phase" : 0.0, # TODO: update via PF
                               "old_phase" : 0.0 # TODO: update via PF
                              }
@@ -223,7 +223,7 @@ def beta_weight_calc(BetaParticle, **args):
             physical and quasi measurements.
     Returns:
     -------
-        net_likelihood : Total likelihood over the neighbouhood of phase estimates 
+        net_likelihood : Total likelihood over the neighbouhood of phase estimates
             for a single Beta particle.
     '''
 

@@ -17,9 +17,9 @@ Created on Thu Apr 20 19:20:43 2017
 .. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 import numpy as np
-from model_design import INITIALDICT
+from qslamdesignparams import MODELDESIGN
 
-LAMBDA = INITIALDICT["LAMBDA"]
+LAMBDA = MODELDESIGN["LAMBDA_1"]
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
 
 
@@ -89,7 +89,7 @@ class Node(object):
 
     def __init__(self):
 
-        self._f_state = np.random.uniform(low=0.0, high=np.pi) # cant set _f_state
+        self._f_state = 0.0
         self.r_state = 0.0
         self.__r_state_variance = 10**4 # COMMENT: default value. Very large to make threshold.
         self.x_state = 0.0

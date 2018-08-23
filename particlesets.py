@@ -20,10 +20,11 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 
 import numpy as np
-
+from qslamdesignparams import MODELDESIGN as md
 # awkward confusing name spaces here and in qslamr
 from particleweightcalcs import WEIGHTFUNCDICT_BETA as BETADICT
 
+MAX_WEIGHT_CUTOFF = float(md["MAX_WEIGHT_CUTOFF"])
 ###############################################################################
 # PARTICLE STRUCTURE
 ###############################################################################
@@ -141,9 +142,9 @@ class ParticleSet(object):
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
 
-            if new_weight > self.p_set**4: # avoid inf
+            if new_weight > MAX_WEIGHT_CUTOFF: # avoid inf
                 print "Large weight reset"
-                new_weight = self.p_set**4
+                new_weight = float(MAX_WEIGHT_CUTOFF)
 
             new_weight_set.append(new_weight)
 
@@ -254,7 +255,7 @@ class BetaParticle(Particle):
         smeared_phases_qj (List of `float` scalars | len == len(neighbourhood_qj)):
             List of phase estimates for each node q in the neighbourhood of node_j,
                 based on correlation length scale, r_state, and phase estimate, f_state, at
-                node_j. Information at node_j is blurred by  `model_design.kernel_function`
+                node_j. Information at node_j is blurred by  `MODELDESIGN["kernel_function"]`
                 accessed in smear_fj_on_neighbours().
         x_j (`float` | scalar):
             Spatial x coordinate estimate at node_j.
