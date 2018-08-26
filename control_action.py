@@ -20,12 +20,12 @@ Created on Thu Apr 20 19:20:43 2017
 
 import numpy as np
 
-def control_lengthscale_uncertainty(listofcontrolparameters, 
+def control_lengthscale_uncertainty(listofcontrolparameters,
                                     next_control_neighbourhood,
-                                    number_of_nodes,
-                                    dtype = [('Node', int), ('ControlParam', float)]
-                                    ):
-# def control_lengthscale_uncertainty(listofcontrolparameters, number_of_nodes):
+                                    number_of_diff_nodes=1,
+                                    dtype=[('Node', int), ('ControlParam', float)]
+                                   ):
+
     ''' Return location(s) for next set of single qubit measurement(s)
         selecting qubit locations with highest state estimate uncertainty.
 
@@ -38,9 +38,13 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
         next_control_neighbourhood (`int`| list) :
             List of indices for a qubit within a control region.
 
-        number_of_nodes (`int`| scalar):
-            Number of single qubit measurements that can be simultaneously
-            performed on the hardware grid.
+        number_of_diff_nodes (`int`| scalar | optional):
+            Number of single qubit measurements at different locations
+            that can be simultaneously performed on the hardware grid.
+
+        dtype ( List of tuples | optional) :
+            Specifies how control parameters and control neighbourhoods are read,
+            and handled by this function. Should be a hidden local variable.
 
     Returns:
     -------
@@ -49,29 +53,32 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
             Dims: number_of_nodes
     '''
 
+    # COMMENT: store control parameters in a structureed numpy array.
+    # Then, mask control parameters which are corresspond to be out of the
+    # control neighbourhood. If the control is empty, include all qubits
+    # in the analysis for choosing the next measurement.
+
     labelled_params = [iterate for iterate in enumerate(listofcontrolparameters)]
     structured_array = np.asarray(labelled_params, dtype=dtype)
-    # Take out those parameters not in the control region
-    # Assume that the Qubit Grid is convex. Any convex polygon can be triangulated
-    # Use this to justify, consider only three nearest neighbours in picking from neighbourhood. (No three point co-linear)
-    # This argument may not apply but its a start
 
-    if 3 <= len(next_control_neighbourhood):
-        print "the neighbourhood has at least 3 qubits"
-        if len(next_control_neighbourhood) < len(listofcontrolparameters) - 3:
-            print "the neighbourhood is very large"
-            mask = np.zeros(len(labelled_params), dtype=bool) # Mask all values
-            mask[next_control_neighbourhood] = True # Show nodes only from next_control_neighbourhood
-            structured_array = structured_array[mask]#No mask for lists - make array and bring back
-            print "I truncated something, see that the control params are shorter", len(structured_array)
+    if len(next_control_neighbourhood) == 0:
+        mask = np.ones(len(labelled_params), dtype=bool) # Mask for showing all values.
+        print "Control List empty"
+
+    if len(next_control_neighbourhood) > 0:
+        mask = np.zeros(len(labelled_params), dtype=bool) # Mask for hiding all values.
+        mask[next_control_neighbourhood] = True # Show nodes only from next_control_neighbourhood.
+
+    structured_array = structured_array[mask] # No mask for lists - make array and bring back.
 
     # Now, sort the region from max to min uncertainty.
-    # structured_array = np.asarray(labelled_params, dtype=dtype)
     sorted_array = np.sort(structured_array, order=['ControlParam', 'Node'])[::-1]
 
-    # Find multiple instances of maximal uncertainty
+    # Zeroth term of sorted_array is the node corresponding to maximal ucertainity.
     max_val = sorted_array['ControlParam'][0]
-    print "max value is ", max_val, ", at node, ", sorted_array['Node'][0]
+
+    # Now find multiple instances of the maximum value if they exist.
+    # If the counter > 1, then multiple maxima exist.
     counter = 1
     for controlparamval in sorted_array['ControlParam'][1:]:
         if controlparamval == max_val:
@@ -81,41 +88,14 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
 
     # Return controls based on highest uncertainty.
     # If equi-certain options exist, choose between these options at random.
-    number_of_nodes = 2
-    if number_of_nodes < counter:
+    if number_of_diff_nodes < counter:
         # Returns random choices among equicertain nodes.
-        chosen_node_indices = np.random.randint(low=0, high=counter, size=number_of_nodes)
+        chosen_node_indices = np.random.randint(low=0, high=counter, size=number_of_diff_nodes)
         return sorted_array['Node'][chosen_node_indices]
 
     elif counter <= number_of_nodes:
-        # Returns nodes in descending order of uncertainty.
-        return sorted_array['Node'][0 : number_of_nodes]
-
-    # controls_list = []
-    # print "here is the input list of r-variances for control"
-    # print listofcontrolparameters
-
-    # for idxnode in range(number_of_nodes):
-
-    #     # TODO: enumerate and sort?
-    #     node_j = np.argmax(listofcontrolparameters)
-
-    #     if  node_j > -1.0:
-    #         # TODO: Eliminate node from future potential controls - why?
-    #         listofcontrolparameters[node_j] = -1.0
-    #         controls_list.append(node_j)
-
-    #     elif node_j == -1.0:
-
-    #         if len(controls_list) > 0:
-    #             return controls_list
-
-    #         elif len(controls_list) == 0:
-    #             print "ERROR in control_lengthscale_uncertainty"
-    #             print "List of controls  = ", controls_list
-    #             raise RuntimeError
-
-    # return np.asarray(controls_list)
+        # Return nodes in descending order of uncertainty
+        return sorted_array['Node'][0 : number_of_diff_nodes]
 
 
 def control_user_input(input_controls, next_control_neighbourhood):
@@ -168,4 +148,3 @@ def controller(listofcontrolparameters, next_control_neighbourhood, controltype=
 
         print "Input control parameters empty."
         raise RuntimeError
-

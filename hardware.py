@@ -17,7 +17,7 @@ Created on Thu Apr 20 19:20:43 2017
 .. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 import numpy as np
-from qslamdesignparams import MODELDESIGN
+from qslamdesignparams import MODELDESIGN,PRIORDICT
 
 LAMBDA = MODELDESIGN["LAMBDA_1"]
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
@@ -89,7 +89,10 @@ class Node(object):
 
     def __init__(self):
 
-        self._f_state = 0.0
+        map_sample = PRIORDICT["SAMPLE_F"]["FUNCTION"](**PRIORDICT["SAMPLE_F"]["ARGS"])
+        print "Initialised map as", map_sample
+        self._f_state = map_sample
+
         self.r_state = 0.0
         self.__r_state_variance = 10**4 # COMMENT: default value. Very large to make threshold.
         self.x_state = 0.0
@@ -139,16 +142,20 @@ class Node(object):
     @property
     def f_state(self): # no .setter function
         '''Return state variable for the dephasing noise field about this location.'''
+
         prob_sample = self.sample_prob_from_msmts()
+
+        # print "Inside f_state, the probability sample is:", prob_sample
+
         if prob_sample is None:
-            # self._f_state = np.random.uniform(low=0.0, high=np.pi)
-            # print "Map value returned is default; prob_sample NONE in f_state", self._f_state
+            # print "Map value returned is I.C.; prob_sample NONE in f_state", self._f_state
             return self._f_state
+
         if prob_sample >= 0.0 and prob_sample <= 1.0:
             self._f_state = Node.inverse_born(prob_sample)
             return self._f_state
-        # print "INVALID prob_sample value encountered in calling f_state", prob_sample
-        print prob_sample
+
+        print "INVALID prob_sample value encountered in calling f_state", prob_sample
         raise RuntimeError
 
     def sample_prob_from_msmts(self): # TODO Data Association
@@ -172,18 +179,20 @@ class Node(object):
         if w_p is None and w_q is None:
             # print "NONE returned in sample_prob_from_msmts"
             return  None
+        
         elif w_p is not None  and w_q is None:
             w_p = 1.0
             w_q = 0.0
         elif w_p is None and w_q is not None:
-            w_q = 1.0
             w_p = 0.0
+            w_q = 1.0
         elif w_p is not None and w_q is not None:
             pass
         prob_j = w_p*prob_p + w_q*prob_q
 
         if prob_j > 1 or prob_j < 0:
             raise RuntimeError
+        
         return prob_j
 
 

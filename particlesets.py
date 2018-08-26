@@ -136,14 +136,22 @@ class ParticleSet(object):
         self.w_dict = WEIGHTFUNCDICT
         self.weights_set = (1.0 / self.p_set)*np.ones(self.p_set)
 
+
     def calc_weights_set(self):
         '''Return an array of normalised weights for a list of Particle objects.'''
         new_weight_set = []
+        
+        print # TODO : Delete code. Printdebug only.
+        print "in calc_weight_set " # TODO : Delete code. Printdebug only.
+        print "printting dictionary" # TODO : Delete code. Printdebug only.
+        print self.w_dict["args"] # TODO : Delete code. Printdebug only.
+        print # TODO : Delete code. Printdebug only.
+
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
 
             if new_weight > MAX_WEIGHT_CUTOFF: # avoid inf
-                print "Large weight reset"
+                # print "Large weight reset"
                 new_weight = float(MAX_WEIGHT_CUTOFF)
 
             new_weight_set.append(new_weight)
@@ -153,7 +161,7 @@ class ParticleSet(object):
         unnormalised_total = np.sum(raw_weights)
 
         if unnormalised_total == 0.0: # avoid zeros
-            print "Weights all zeros =", raw_weights
+            # print "Weights all zeros =", raw_weights
             normalisation = 1.0
             return normalisation*raw_weights
 
@@ -319,7 +327,9 @@ class BetaParticle(Particle):
         ''' Builds smeared_phases_qj, the list of phase estimates for all
             neighbouring qubits around node_j, after a local measurement at node_j.
         '''
-
+        # print  # TODO : Delete code. Printdebug only.
+        # print "In particlesets.smear_fj_on_neighbours..." # TODO : Delete code. Printdebug only.
+        
         self.get_neighbourhood_qj()
 
         prev_posterior_f_state = args["prev_posterior_f_state"]
@@ -332,10 +342,22 @@ class BetaParticle(Particle):
             node_q = self.neighbourhood_qj[idx_q]
             dist_jq = self.neighbour_dist_qj[idx_q]
             tau_q = prev_counter_tau_state[node_q]
+
+            if tau_q == 0:
+                # TODO: Add functionality here for dealing with unmeasured qubits.
+                pass
             f_state_q = prev_posterior_f_state[node_q]
 
             lambda_q = lambda_** tau_q
             kernel_val = args["kernel_function"](dist_jq, self.f_j, self.r_j)
 
             smear_phase = (1.0 - lambda_q)*f_state_q + lambda_q*kernel_val
+
+            # print "Measured qubit j - map value, lengscale", self.f_j, self.r_j # TODO : Delete code. Printdebug only.
+            # print 'Distance between qubits', dist_jq # TODO : Delete code. Printdebug only.
+            # print "Value from the kernel", kernel_val # TODO : Delete code. Printdebug only.
+            # print "Previosu posterior state at q", f_state_q # TODO : Delete code. Printdebug only.
+            # print "Smeared phase: ", smear_phase # TODO : Delete code. Printdebug only.
+            # print # TODO : Delete code. Printdebug only.
+
             self.smeared_phases_qj.append(smear_phase)

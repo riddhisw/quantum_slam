@@ -228,7 +228,8 @@ def beta_weight_calc(BetaParticle, **args):
     '''
 
     likelihood_neighbours = []
-
+    # print # TODO : Delete code. Printdebug only.
+    # print "In beta_weight_calc" # TODO : Delete code. Printdebug only.
     for idx_q in range(len(BetaParticle.neighbourhood_qj)):
         # INCORRECT? SHOULDN"T THIS BE args["l_args"]["new_phase"]
         # args["new_phase"] = BetaParticle.smeared_phases_qj[idx_q]
@@ -237,8 +238,11 @@ def beta_weight_calc(BetaParticle, **args):
         # INCORRECT? SHOULDN"T THIS BE args["l_args"]["old_phase"]
         # args["old_phase"] = BetaParticle.parent[idx_q]
         likelihood = args["l_func"](**args["l_args"])
-        likelihood_neighbours.append(likelihood)
-
+        likelihood_neighbours.append(likelihood) 
+        # print "For the next beta likelhood calculation,..." # TODO : Delete code. Printdebug only.
+        # print "LIKELHOOD BETA args are: ", args["l_args"] # TODO : Delete code. Printdebug only.
+        # print "And the likelihood value is ", likelihood # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
     net_likelihood = np.prod(np.asarray(likelihood_neighbours).flatten())
     return net_likelihood
 

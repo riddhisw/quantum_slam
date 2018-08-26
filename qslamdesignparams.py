@@ -116,7 +116,7 @@ GRIDDICT = {"QUBIT_1" : (1., 0.0),
 
 ####################################### PROCESS AND MEASUREMENT NOISE ##########
 
-NOISEPARAMS = {"SIGMOID_APPROX_ERROR" : {"MU": 0.0, "SIGMA" : (np.pi*0.01)**2},
+NOISEPARAMS = {"SIGMOID_APPROX_ERROR" : {"MU": 0.0, "SIGMA" : 1.0},
                "QUANTISATION_UNCERTY" : {"MU": 0.0, "SIGMA" : 0.001},
                "CORRELATION_DYNAMICS" : {"MU": 0.0, "SIGMA" : 0.0},
                "SPATIAL_NOISE_JITTER" : {"MU": 0.0, "SIGMA" : 0.0}
@@ -135,11 +135,11 @@ FIX_LAMBDAS = 0.99
 MODELDESIGN = {"LAMBDA_1" : FIX_LAMBDAS, # Forgetting factor for sample probabilities
                "LAMBDA_2" : FIX_LAMBDAS, # Forgetting factor for smeare phases
                "GAMMA_T" : 100000.0, # Re-sampling threshold -- NOT USED
-               "P_ALPHA" : 20, # Number of alpha particles
-               "P_BETA" : 40, # Numer of beta particles for each alpha
+               "P_ALPHA" : 5, # Number of alpha particles
+               "P_BETA" : 3, # Numer of beta particles for each alpha
                "kernel_function" : gaussian_kernel,
                "MULTIPLER_R_MIN" : 1.0,  # Sets R_Min based on qubit grid.
-               "MULTIPLER_R_MAX" : 10.0, # Sets R_Max based on qubit grid.
+               "MULTIPLER_R_MAX" : 2.0, # Sets R_Max based on qubit grid.
                "MULTIPLER_MEAN_RADIUS" : 1.0, # Sets mean radius according to posterior r_state??
                "MAX_WEIGHT_CUTOFF" : 100000.0,
                "MSMTS_PER_NODE" : 1
@@ -160,8 +160,8 @@ def sample_s_prior(**args):
                                size=SIZE)
     return samples
 
-S_PRIOR_ARGS = {"MEAN" : None,
-                "VAR" : None,
+S_PRIOR_ARGS = {"MEAN" : 0.0,
+                "VAR" : 10.0**(-8),
                 "SIZE" : None}
 
 
