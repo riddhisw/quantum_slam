@@ -50,7 +50,7 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
     -------
         controls_list (`float64` | numpy array):
             Location(s) for performnng the next single qubit measurement.
-            Dims: number_of_nodes
+            Dims: number_of_diff_nodes
     '''
 
     # COMMENT: store control parameters in a structureed numpy array.
@@ -93,7 +93,7 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
         chosen_node_indices = np.random.randint(low=0, high=counter, size=number_of_diff_nodes)
         return sorted_array['Node'][chosen_node_indices]
 
-    elif counter <= number_of_nodes:
+    elif number_of_diff_nodes >= counter:
         # Return nodes in descending order of uncertainty
         return sorted_array['Node'][0 : number_of_diff_nodes]
 

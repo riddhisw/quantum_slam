@@ -17,8 +17,7 @@ Created on Thu Apr 20 19:20:43 2017
 .. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 import numpy as np
-from qslamdesignparams import MODELDESIGN,PRIORDICT
-
+from qslamdesignparams import MODELDESIGN, PRIORDICT
 LAMBDA = MODELDESIGN["LAMBDA_1"]
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
 
@@ -89,8 +88,8 @@ class Node(object):
 
     def __init__(self):
 
+        # COMMENT: f_state can only be initialised here once. No setter function.
         map_sample = PRIORDICT["SAMPLE_F"]["FUNCTION"](**PRIORDICT["SAMPLE_F"]["ARGS"])
-        print "Initialised map as", map_sample
         self._f_state = map_sample
 
         self.r_state = 0.0

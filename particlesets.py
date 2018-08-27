@@ -140,12 +140,12 @@ class ParticleSet(object):
     def calc_weights_set(self):
         '''Return an array of normalised weights for a list of Particle objects.'''
         new_weight_set = []
-        
-        print # TODO : Delete code. Printdebug only.
-        print "in calc_weight_set " # TODO : Delete code. Printdebug only.
-        print "printting dictionary" # TODO : Delete code. Printdebug only.
-        print self.w_dict["args"] # TODO : Delete code. Printdebug only.
-        print # TODO : Delete code. Printdebug only.
+
+        # print # TODO : Delete code. Printdebug only.
+        # print "in calc_weight_set " # TODO : Delete code. Printdebug only.
+        # print "printting dictionary" # TODO : Delete code. Printdebug only.
+        # print self.w_dict["args"] # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
 
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
@@ -226,12 +226,20 @@ class AlphaParticle(Particle):
 
     def generate_beta_pset(self, parents, radii):
         '''docstring'''
+
+        # print "Generating a Beta Layer!" # TODO : Delete code. Printdebug only.
+
         beta_s = []
         for idx in range(len(parents)): # TODO: Use enumerate
             state = parents[idx]
             radius = radii[idx]
             beta_s.append(BetaParticle(self.node_j, state, radius))
         self.BetaAlphaSet_j = ParticleSet(beta_s, **BETADICT)
+
+        if  self.BetaAlphaSet_j is None: # TODO : Delete code. Printdebug only.
+            print "Empty Beta Layer Generated" # TODO : Delete code. Printdebug only.
+            raise RuntimeError # TODO : Delete code. Printdebug only.
+        # print "Beta Layer is not empty and is: ", self.BetaAlphaSet_j # TODO : Delete code. Printdebug only.
 
 class BetaParticle(Particle):
     '''Initiates a single Beta particle. Inherits from Particle.

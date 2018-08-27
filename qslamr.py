@@ -137,9 +137,19 @@ class ParticleFilter(Grid):
         self.MODELDESIGN = MODELDESIGN
         self.dgrid, self.diterq, self.R_MIN, self.R_MAX = self.set_uniform_prior_for_correlation()
         empty_alpha_particles = [AlphaParticle() for idx in range(self.MODELDESIGN["P_ALPHA"])]
-        self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
         # self.resample_thresh = MODELDESIGN["GAMMA_T"]
         self.measurements_controls = None
+
+        # print "In __init__, created Alpha Particles" # TODO : Delete code. Printdebug only.
+
+        self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
+
+        # print "In __init__, new Alpha Particles have no beta later" # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles have no Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+        # print '-------------complete __init__ ------------' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
 
     def set_uniform_prior_for_correlation(self):
         '''Return max qubit pairwise separation  on hardware, and lower and upper
@@ -165,6 +175,11 @@ class ParticleFilter(Grid):
 
         R_MAX = d_grid * self.MODELDESIGN["MULTIPLER_R_MAX"]
         R_MIN = diterq * self.MODELDESIGN["MULTIPLER_R_MIN"]
+
+        # print ''' --------- skip set_uniform_prior_for_correlation ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print  # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+
         return d_grid, diterq, R_MIN, R_MAX
 
     def qslamr(self, measurements_controls=None, autocontrol="OFF",
@@ -244,18 +259,21 @@ class ParticleFilter(Grid):
             return self.measurements_controls[protocol_counter]
 
         elif autocontrol == "ON":
-            print "Input control neighbourhood is: ", next_control_neighbourhood # TODO : Delete code. Printdebug only.
+            # print "Input control neighbourhood is: ", next_control_neighbourhood # TODO : Delete code. Printdebug only.
             node_j = controller(listofcontrolparameters,
                                 next_control_neighbourhood,
                                 number_of_nodes=1)[0]
             # TODO: adapt for arbiraty number of simultaneous msmts , number_of_nodes > 1
             msmtset_j = [self.QubitGrid.measure_node(node_j) for idx in range(self.MODELDESIGN["MSMTS_PER_NODE"])]
-            
-            print # TODO : Delete code. Printdebug only.
-            print "Check output of the controller" # TODO : Delete code. Printdebug only.
-            print "Check msmtset_j", msmtset_j # TODO : Delete code. Printdebug only.
-            print "Check node_j", node_j # TODO : Delete code. Printdebug only.
-            print # TODO : Delete code. Printdebug only.
+
+            # print # TODO : Delete code. Printdebug only.
+            # print "Check output of the controller" # TODO : Delete code. Printdebug only.
+            # print "Check msmtset_j", msmtset_j # TODO : Delete code. Printdebug only.
+            # print "Check node_j", node_j # TODO : Delete code. Printdebug only.
+            # print # TODO : Delete code. Printdebug only.
+            # print ''' --------- skip measurement_operation ------------ ''' # TODO : Delete code. Printdebug only. 
+            # print # TODO : Delete code. Printdebug only. 
+            # print # TODO : Delete code. Printdebug only. 
 
             return [msmtset_j, node_j]
 
@@ -315,9 +333,13 @@ class ParticleFilter(Grid):
         for alphaparticle in self.AlphaSet.particles:
             self.set_init_alphaparticle(alphaparticle)
 
-        print "Here is the posterior Alpha_state: ", self.AlphaSet.posterior_state
+        # print "Here is the posterior Alpha_state: ", self.AlphaSet.posterior_state # TODO : Delete code. Printdebug only.
         self.QubitGrid.state_vector = self.AlphaSet.posterior_state
-        print "Here is the QubitGrid state vector: ", self.QubitGrid.state_vector
+        # print "Here is the QubitGrid state vector: ", self.QubitGrid.state_vector # TODO : Delete code. Printdebug only.
+        # print ''' --------- skip InitializeParticles ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        
 
 
     def set_init_alphaparticle(self, alphaparticle):
@@ -339,10 +361,10 @@ class ParticleFilter(Grid):
         for idx_key in ["SAMPLE_X", "SAMPLE_Y", "SAMPLE_F", "SAMPLE_R"]: # f_state cannot be set, merely read from QubitGrid
 
             if idx_key == "SAMPLE_F":
-                samples = self.QubitGrid.get_all_nodes(["f_state"])
+                samples = self.QubitGrid.get_all_nodes(["f_state"]) # Currently  all alpha particles have the same prior ie. same f_state values. 
 
             if idx_key != "SAMPLE_F":
-                
+
                 PRIORDICT[idx_key]["ARGS"]["SIZE"] = size
                 samples = PRIORDICT[idx_key]["FUNCTION"](**PRIORDICT[idx_key]["ARGS"])
 
@@ -371,13 +393,14 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
-        print "Qubit Grid f_state before measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
-
+        # print "Qubit Grid f_state before measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
         self.QubitGrid.nodes[control_j].physcmsmtsum = next_phys_msmt_j
         prob_j = self.QubitGrid.nodes[control_j].sample_prob_from_msmts()
         update_alpha_dictionary(next_phys_msmt_j, prob_j)
-
-        print "Qubit Grid f_state after measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
+        # print "Qubit Grid f_state after measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
+        # print ''' --------- skip ReceiveMsmt ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
 
 #       ------------------------------------------------------------------------
 #       SUPPORT FUNCTION 3: PROPAGATE (ALPHA) STATES
@@ -397,6 +420,9 @@ class ParticleFilter(Grid):
 
         for alpha_particle in self.AlphaSet.particles:
             self.sample_from_transition_dist(alpha_particle, control_j)
+        # print ''' --------- skip PropagateState ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
 
     def sample_from_transition_dist(self, alpha_particle, control_j):
         ''' Helper function for PropagateState(). Under identity dynamics (time invariance)
@@ -429,6 +455,12 @@ class ParticleFilter(Grid):
         new_alpha_weights = self.AlphaSet.calc_weights_set() # Normlaised
         self.AlphaSet.weights_set = new_alpha_weights
         # print "Alpha weight set after ComputeAlphaWeights() ",  self.AlphaSet.weights_set  # TODO : Delete code. Printdebug only.
+        # print "In ComputeAlphaWeights, new Alpha Particles have no beta later" # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles have no Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+        # print '-------------complete ComputeAlphaWeights ------------' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
 
     def ComputePosteriorWeights(self, control_j):
         ''' Return posterior weights for the joint distribution defined over both
@@ -449,9 +481,7 @@ class ParticleFilter(Grid):
         # # checked. doesn't make a difference.
             alpha_particle = self.AlphaSet.particles[idx_alpha]
             alpha_particle.particle[f_state_index] = self.QubitGrid.nodes[control_j].f_state
-
-            print "Qubit Grid f_state assigned to alpha f_state prior to beta generation: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
-
+            # print "Qubit Grid f_state assigned to alpha f_state prior to beta generation: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
             # print "For parent Alpha, there should be no beta BetaAlphaSet_j layer:",  alpha_particle.BetaAlphaSet_j # TODO : Delete code. Printdebug only.
             beta_alpha_j_weights = self.generate_beta_layer(alpha_particle)
             # print "For parent Alpha, now we have a layer and the beta weights are:", beta_alpha_j_weights # TODO : Delete code. Printdebug only.
@@ -472,7 +502,14 @@ class ParticleFilter(Grid):
             print "Invalid Nan values encountered in ComputePosteriorWeights()"
             print normalised_posterior_weights
             raise RuntimeError
-
+        
+        # print "In ComputePosteriorWeights, new Alpha Particles DO HAVE beta layers" # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+        # print '-------------complete ComputePosteriorWeights ------------' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        
         return  normalised_posterior_weights
 
 
@@ -506,7 +543,13 @@ class ParticleFilter(Grid):
         # print "Check parent beta states are updated correctly" # TODO : Delete code. Printdebug only.
         # print [state[self.QubitGrid.number_of_nodes*3:] for state in list_of_parent_states] # TODO : Delete code. Printdebug only.
 
+        # print "In generate_beta_layer, at this point we have No beta layer" # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+
         alpha_particle.generate_beta_pset(list_of_parent_states, list_of_length_samples)
+
+        # print "In generate_beta_layer, now we should have a complete beta layer" # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
 
         # print "For each beta object, we print the neighbourhood:" # TODO : Delete code. Printdebug only.
 
@@ -520,6 +563,10 @@ class ParticleFilter(Grid):
         # if np.sum(np.asarray(beta_alpha_j_weights)) == 0: # TODO : Delete code. Printdebug only.
             # print "Returning zero beta weights" # TODO : Delete code. Printdebug only.
         # print "Beta layer weights are:", beta_alpha_j_weights
+
+        # print '-------------complete generate_beta_layer ------------' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
 
         return beta_alpha_j_weights
 
@@ -573,18 +620,51 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
+        # print 'Entering ResampleParticles...' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only.
+
         resampled_idx = ParticleFilter.resample_constant_pset_alpha(posterior_weights,
                                                                     self.MODELDESIGN["P_ALPHA"],
                                                                     self.MODELDESIGN["P_BETA"])
+        
+        # print 'In ResampleParticles, I just finished getting a list of resampling indicies.' # TODO : Delete code. Printdebug only.
+        # print 'I got out out resample_constant_pset_alpha' # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only.
 
         new_alpha_subtrees = self.get_subtrees(resampled_idx, self.MODELDESIGN["P_BETA"])
+
+        # print 'In ResampleParticles, I made sub-trees which survived resampling.' # TODO : Delete code. Printdebug only.
+        # print 'I got out out get_subtrees' # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only.
+
         new_alpha_list = self.collapse_beta(new_alpha_subtrees, resampled_idx)
+
+        # print 'In ResampleParticles, I just collapsed the beta layer.' # TODO : Delete code. Printdebug only.
+        # print 'I got out out collapse_beta' # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO NOT HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+        # print# TODO : Delete code. Printdebug only.
+        
         self.AlphaSet.particles = new_alpha_list # this a list of particle objects
 
         # COMMENT: Resampled, uniform weights
         uniformprob = (1.0/self.MODELDESIGN["P_ALPHA"])
         self.AlphaSet.weights_set = uniformprob*np.ones(self.MODELDESIGN["P_ALPHA"])
 
+        # print 'In ResampleParticles, I finished everything.' # TODO : Delete code. Printdebug only.
+        # print "Let's check new particles DO NOT HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+        # print# TODO : Delete code. Printdebug only.
+        # print ''' --------- completed ResampleParticles ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
 
     def collapse_beta(self, subtree_list, resampled_indices):
         ''' Return resampled Alpha parents with collapsed Beta layers. For each Alpha
@@ -597,6 +677,11 @@ class ParticleFilter(Grid):
         Returns:
         -------
         '''
+        # print 'Entering collapse_beta...' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print "Let's check alpha particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+
         state_update = 0.
         new_alpha_particle_list = []
 
@@ -612,11 +697,27 @@ class ParticleFilter(Grid):
 
             if leaf_count != 0: # excludees the [0,0] subtree
 
+                # print "For the next input subtree, the leaf count is non-zero"# TODO : Delete code. Printdebug only.
+                # print "Let's check alpha particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+                # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+
                 # COMMENT: Get indicies and reset controlparam
                 alpha_node = ParticleFilter.get_alpha_node_from_treeleaf(leaves_of_subtree[0], self.MODELDESIGN["P_BETA"])
                 beta_alpha_nodes = [ParticleFilter.get_beta_node_from_treeleaf(leafy, self.MODELDESIGN["P_BETA"]) for leafy in leaves_of_subtree]
                 r_est_index = self.QubitGrid.number_of_nodes*3 + self.AlphaSet.particles[alpha_node].node_j
                 r_est_subtree_list = []
+
+                # print "So far we've just calculated indicies for alpha and beta nodes"# TODO : Delete code. Printdebug only.
+                # print "Let's check alpha particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+                # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
+
+                # print "Now we will try and access the Beta layer in a subsequent step." # TODO : Delete code. Printdebug only.
+                # print "Let's check alpha particle at a particular index exists " # TODO : Delete code. Printdebug only.
+                # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+                # print "alpha_node", alpha_node # TODO : Delete code. Printdebug only.
+                # print  self.AlphaSet.particles[alpha_node] # TODO : Delete code. Printdebug only.
+                # print "Let's check alpha particles DO HAVE a Beta Layer " # TODO : Delete code. Printdebug only.
+                # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only. 
 
                 for node in beta_alpha_nodes:
                     beta_state = self.AlphaSet.particles[alpha_node].BetaAlphaSet_j.particles[node].particle.copy()
@@ -636,7 +737,15 @@ class ParticleFilter(Grid):
 
                 # Collapse Beta Layer
                 self.AlphaSet.particles[alpha_node].particle = parent*1.0
-                self.AlphaSet.particles[alpha_node].BetaAlphaSet_j = None
+
+                # COMMENT: The line of code below resets beta layers for an alpha 
+                # parent. This code only works if the alpha_nodes are unique. For 
+                # alpha parents that are not unique, it will wipe out the BetaLayer
+                # and the loop over sub-trees will fail if the parent is repeated.
+                # For re-sampled parents, we will use null_beta_layer() function
+                # to kill the beta layer for an Alpha parent. 
+                # ERROR GENERATING CODE:
+                # self.AlphaSet.particles[alpha_node].BetaAlphaSet_j = None
 
                 # New Alphas Stored, control parameters updated
                 uncertainity_at_j += r_est_subtree_variance * normaliser
@@ -650,11 +759,39 @@ class ParticleFilter(Grid):
 
             alpha_sample_size = self.MODELDESIGN["P_ALPHA"] - number_of_new_alphas
             alpha_sampling_vector = np.random.randint(low=0, high=number_of_new_alphas, size=alpha_sample_size)
-            extended_alpha_list  = new_alpha_particle_list + [new_alpha_particle_list[idx_] for idx_ in alpha_sampling_vector]
 
+            # print "new_alpha_particle_list" # TODO : Delete code. Printdebug only.
+            # print new_alpha_particle_list # TODO : Delete code. Printdebug only.
+            # print "confirm null list", [idxalpha.BetaAlphaSet_j for idxalpha in new_alpha_particle_list] # TODO : Delete code. Printdebug only.
+            # print # TODO : Delete code. Printdebug only.
+            
+            extended_alpha_list  = new_alpha_particle_list + [new_alpha_particle_list[idx_] for idx_ in alpha_sampling_vector] 
+            
+            # print "extended_alpha_list"# TODO : Delete code. Printdebug only.
+            # print extended_alpha_list # TODO : Delete code. Printdebug only.
+            # print "confirm null list", [idxalpha.BetaAlphaSet_j for idxalpha in extended_alpha_list] # TODO : Delete code. Printdebug only.
+            # print # TODO : Delete code. Printdebug only.
+
+            self.null_beta_layer(extended_alpha_list)
             return extended_alpha_list
-
+        
+        self.null_beta_layer(new_alpha_particle_list)
         return new_alpha_particle_list
+
+    def null_beta_layer(self, list_of_alpha_particles):
+        ''' Strips input list of Alpha particles of its individual Beta layers. Helpfer function to self.collapse_beta()'''
+
+        # print "In null_beta_layer, at this point DO HAVE a beta layer" # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+
+        for alpha_idx in list_of_alpha_particles:
+            alpha_idx.BetaAlphaSet_j = None
+
+        # print "In null_beta_layer, now we DO NOT HAVE a beta layer" # TODO : Delete code. Printdebug only.
+        # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
+        # print '-------------complete null_beta_layer ------------' # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
+        # print # TODO : Delete code. Printdebug only.
 
 
     def effective_particle_size(self, posterior_weights):
@@ -711,11 +848,15 @@ class ParticleFilter(Grid):
                 print "... no quasi_msmts were added."
 
         # neighbourhood of next control action
-        print "The next control neighbourhod is  posterior_beta_particle.neighbourhood_qj" # TODO : Delete code. Printdebug only.
-        print  posterior_beta_particle.neighbourhood_qj # TODO : Delete code. Printdebug only.
-        if len( posterior_beta_particle.neighbourhood_qj) < 1 : # TODO : Delete code. Printdebug only.
-            print "Empty control neighbourhood" # TODO : Delete code. Printdebug only.
-            raise RuntimeError # TODO : Delete code. Printdebug only.
+        # print "The next control neighbourhod is  posterior_beta_particle.neighbourhood_qj" # TODO : Delete code. Printdebug only.
+        # print  posterior_beta_particle.neighbourhood_qj # TODO : Delete code. Printdebug only.
+        # if len( posterior_beta_particle.neighbourhood_qj) < 1 : # TODO : Delete code. Printdebug only.
+        #     print "Empty control neighbourhood" # TODO : Delete code. Printdebug only.
+        #     raise RuntimeError # TODO : Delete code. Printdebug only.
+
+        # print ''' --------- skip update_qubitgrid_via_quasimsmts ------------ ''' # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
+        # print # TODO : Delete code. Printdebug only. 
 
         return posterior_beta_particle.neighbourhood_qj
 
