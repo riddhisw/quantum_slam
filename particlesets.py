@@ -20,11 +20,7 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 
 import numpy as np
-from qslamdesignparams import MODELDESIGN as md
-# awkward confusing name spaces here and in qslamr
-from particleweightcalcs import WEIGHTFUNCDICT_BETA as BETADICT
 
-MAX_WEIGHT_CUTOFF = float(md["MAX_WEIGHT_CUTOFF"])
 ###############################################################################
 # PARTICLE STRUCTURE
 ###############################################################################
@@ -126,7 +122,9 @@ class ParticleSet(object):
             Particle objects.
     '''
 
-    def __init__(self, list_of_particle_objects, **WEIGHTFUNCDICT):
+    def __init__(self, list_of_particle_objects,
+                 MAX_WEIGHT_CUTOFF=100000.0,
+                 **WEIGHTFUNCDICT):
         ''' Initiates a ParticleSet instance.'''
 
         self.__weights_set = 0.0
@@ -224,7 +222,7 @@ class AlphaParticle(Particle):
         self.SIG2_MEASR = 0.0
         self.BetaAlphaSet_j = None
 
-    def generate_beta_pset(self, parents, radii):
+    def generate_beta_pset(self, parents, radii, **BETADICT):
         '''docstring'''
 
         # print "Generating a Beta Layer!" # TODO : Delete code. Printdebug only.

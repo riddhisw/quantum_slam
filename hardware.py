@@ -17,8 +17,6 @@ Created on Thu Apr 20 19:20:43 2017
 .. moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 import numpy as np
-from qslamdesignparams import MODELDESIGN, PRIORDICT
-LAMBDA = MODELDESIGN["LAMBDA_1"]
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
 
 
@@ -86,10 +84,10 @@ class Node(object):
 
     '''
 
-    def __init__(self):
+    def __init__(self, map_sample, LAMBDA_1):
 
         # COMMENT: f_state can only be initialised here once. No setter function.
-        map_sample = PRIORDICT["SAMPLE_F"]["FUNCTION"](**PRIORDICT["SAMPLE_F"]["ARGS"])
+        # map_sample = PRIORDICT["SAMPLE_F"]["FUNCTION"](**PRIORDICT["SAMPLE_F"]["ARGS"])
         self._f_state = map_sample
 
         self.r_state = 0.0
@@ -100,7 +98,7 @@ class Node(object):
         self.counter_beta = 0
         self.__physcmsmtsum = 0.0
         self.__quasimsmtsum = 0.0
-        self.lambda_factor = LAMBDA
+        self.lambda_factor = LAMBDA_1
 
     @property
     def physcmsmtsum(self):
@@ -216,6 +214,11 @@ class Grid(object):
 
     Attributes:
     ----------
+        LAMBDA_1 (`dtype` | scalar ):
+            Forgetting factor for sample probability information obtained
+                via physical vs. quasi-measurements.
+        SAMPLE_F (Dictionary object):
+            GLOBALDICT["PRIORDICT"]["SAMPLE_F"] Object.
         list_of_nodes_positions (`float64` | list ):
             List of (x, y) pairs for defining spatial coordinates for qubits on hardware.
         engineeredtruemap (`dtype` | scalar ):
@@ -242,14 +245,22 @@ class Grid(object):
 
     '''
 
-    def __init__(self, list_of_nodes_positions=None, engineeredtruemap=None):
+    def __init__(self,LAMBDA_1=1.0,
+                 list_of_nodes_positions=None,
+                 engineeredtruemap=None, **SAMPLE_F):
+
         if list_of_nodes_positions is None:
             print "No node positions specified"
             raise RuntimeError
 
         self.list_of_nodes_positions = list_of_nodes_positions
         self.number_of_nodes = len(self.list_of_nodes_positions)
-        self.nodes = [Node() for i in range(self.number_of_nodes)]
+
+        self.SAMPLE_F = SAMPLE_F
+        self.SAMPLE_F["ARGS"]["SIZE"] = self.number_of_nodes
+        f_samples = self.SAMPLE_F["FUNCTION"](self.SAMPLE_F["ARGS"])
+        self.nodes = [Node(f_prior, LAMBDA_1) for f_prior in f_samples]
+
         self.__state_vector = 0.0
         self.state_vector = np.zeros(self.number_of_nodes*len(PARTICLE_STATE))
 

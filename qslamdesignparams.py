@@ -59,7 +59,9 @@ Created on Thu Apr 20 19:20:43 2017
             In ParticleSet.calc_weights_set() object, resets extremely large weights
         MSMTS_PER_NODE (`int`  | scalar): Number of measurements per qubit per iteration before information is
             exchanged with neighbours.
-    
+        MAX_NUM_ITERATIONS (`int`  | scalar): Max number of iterations for a qslam
+            algorithm. A single control directive corressponds to one iteration.
+
     PRIORDICT : Defines sub-dictionaries for each prior distributions
         (functional form and functional arguments) for position and correlation
         lengthscale state variables.
@@ -107,12 +109,37 @@ moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 
 import numpy as np
 
-GRIDDICT = {"QUBIT_1" : (1., 0.0),
-            "QUBIT_2" : (2., 0.0),
-            "QUBIT_3" : (3., 0.0),
-            "QUBIT_4" : (4., 0.0),
-            "QUBIT_5" : (5., 0.0),
+GRIDDICT = {"QUBIT_01" : (0.0, 0.0),
+            "QUBIT_02" : (0.0, 1.0),
+            "QUBIT_03" : (0.0, 2.0),
+            "QUBIT_04" : (0.0, 3.0),
+            "QUBIT_05" : (0.0, 4.0),
+            "QUBIT_06" : (1.0, 0.0),
+            "QUBIT_07" : (1.0, 1.0),
+            "QUBIT_08" : (1.0, 2.0),
+            "QUBIT_09" : (1.0, 3.0),
+            "QUBIT_10" : (1.0, 4.0),
+            "QUBIT_11" : (2.0, 0.0),
+            "QUBIT_12" : (2.0, 1.0),
+            "QUBIT_13" : (2.0, 2.0),
+            "QUBIT_14" : (2.0, 3.0),
+            "QUBIT_15" : (2.0, 4.0),
+            "QUBIT_16" : (3.0, 0.0),
+            "QUBIT_17" : (3.0, 1.0),
+            "QUBIT_18" : (3.0, 2.0),
+            "QUBIT_19" : (3.0, 3.0),
+            "QUBIT_20" : (3.0, 4.0),
+            "QUBIT_21" : (4.0, 0.0),
+            "QUBIT_22" : (4.0, 1.0),
+            "QUBIT_23" : (4.0, 2.0),
+            "QUBIT_24" : (4.0, 3.0),
+            "QUBIT_25" : (4.0, 4.0)
            }
+
+
+# Make this into  A FUNCTION
+LIST_OF_POSITIONS = [(0.0, 0.0), (0.0, 1.0), (0.0, 2.0), (0.0, 3.0), (0.0, 4.0), (1.0, 0.0), (1.0, 1.0), (1.0, 2.0), (1.0, 3.0), (1.0, 4.0), (2.0, 0.0), (2.0, 1.0), (2.0, 2.0), (2.0, 3.0), (2.0, 4.0), (3.0, 0.0), (3.0, 1.0), (3.0, 2.0), (3.0, 3.0), (3.0, 4.0), (4.0, 0.0), (4.0, 1.0), (4.0, 2.0), (4.0, 3.0), (4.0, 4.0)]
+
 
 ####################################### PROCESS AND MEASUREMENT NOISE ##########
 
@@ -131,18 +158,19 @@ def gaussian_kernel(dist_jq, f_est_j, r_est_j):
     kernel_val = f_est_j*np.exp(argument)
     return kernel_val
 
-FIX_LAMBDAS = 0.99
-MODELDESIGN = {"LAMBDA_1" : FIX_LAMBDAS, # Forgetting factor for sample probabilities
-               "LAMBDA_2" : FIX_LAMBDAS, # Forgetting factor for smeare phases
+MODELDESIGN = {"LAMBDA_1" : 0.99, # Forgetting factor for sample probabilities
+               "LAMBDA_2" : 0.977, # Forgetting factor for smeare phases
                "GAMMA_T" : 100000.0, # Re-sampling threshold -- NOT USED
                "P_ALPHA" : 5, # Number of alpha particles
                "P_BETA" : 3, # Numer of beta particles for each alpha
                "kernel_function" : gaussian_kernel,
                "MULTIPLER_R_MIN" : 1.0,  # Sets R_Min based on qubit grid.
-               "MULTIPLER_R_MAX" : 2.0, # Sets R_Max based on qubit grid.
+               "MULTIPLER_R_MAX" : 4.0, # Sets R_Max based on qubit grid.
                "MULTIPLER_MEAN_RADIUS" : 1.0, # Sets mean radius according to posterior r_state??
                "MAX_WEIGHT_CUTOFF" : 100000.0,
-               "MSMTS_PER_NODE" : 1
+               "MSMTS_PER_NODE" : 5,
+               "MAX_NUM_ITERATIONS" : 10,
+               "ID": 'calibration_run_C0'
               }
 
 ################################################# PRIOR DISTRIBUTIONS ##########
@@ -202,3 +230,51 @@ PRIORDICT = {"SAMPLE_X" : {"FUNCTION": sample_s_prior, "ARGS": S_PRIOR_ARGS},
              "SAMPLE_F" : {"FUNCTION": sample_f_prior, "ARGS": F_PRIOR_ARGS},
              "SAMPLE_R" : {"FUNCTION": sample_r_prior, "ARGS": R_PRIOR_ARGS}
             }
+
+#################################### HYPERPARAMETER PRIOR DISTRIBUTIONS #########
+
+def sample_hyper_dist(space_size=None, **hyper_args):
+    hyper_args["MIN"] = L_MIN
+    hyper_args["MAX"] = L_MAX
+    
+    if space_size is None:
+        sample = np.random.uniform(low=L_MIN, high = L_MAX, size=1)
+    
+    elif space_size is not None:
+        sample = func_x0(space_size)
+
+    return sample
+
+def func_x0(space_size):
+    '''
+    Returns random samples from a parameter space defined by space_size
+    '''
+    maxindex = space_size.shape[0]-1
+    ind = int(np.random.uniform(low=0, high=maxindex))
+    exponent = space_size[ind]
+    return np.random.uniform(0,1)*(10.0**exponent)
+
+hyper_args = {"LAMBDA_1": {"MIN": 0.9, "MAX": 1.0},
+              "LAMBDA_2": {"MIN": 0.9, "MAX": 1.0},
+              "SIGMOID_VAR": {"MIN": 0.9, "MAX": 1.0},
+              "QUANT_VAR": {"MIN": 0.9, "MAX": 1.0}
+              }
+HYPERDICT = {"DIST" : sample_hyper_dist,
+             "ARGS" : hyper_args
+            }
+##################################################### GLOBAL MODEL ###############
+GLOBALDICT = {"MODELDESIGN": MODELDESIGN,
+              "PRIORDICT" : PRIORDICT,
+              "NOISEPARAMS": NOISEPARAMS,
+              "GRIDDICT" : GRIDDICT
+             }
+
+##################################################### RISK MODEL ###############
+
+RISKPARAMS = {"savetopath": './',
+              "max_it_qslam": 1,
+              "max_it_BR": 50,
+              "num_randparams": 50,
+              "space_size": None,
+              "loss_truncation":0.1
+             }

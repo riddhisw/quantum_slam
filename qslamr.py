@@ -16,15 +16,15 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 
 import numpy as np
-import particleweightcalcs as pd
-from qslamdesignparams import MODELDESIGN, PRIORDICT
-from hardware import Grid, PARTICLE_STATE
 from itertools import combinations
-from particlesets import AlphaParticle, ParticleSet, BetaParticle
-from particleweightcalcs import WEIGHTFUNCDICT_ALPHA, WEIGHTFUNCDICT_BETA, update_alpha_dictionary
 from scipy.stats import mode
-from hardware import Node
+
+from hardware import Grid, PARTICLE_STATE
+from hardware import Node # not initiated, just access static method
 from control_action import controller
+
+from particlesets import AlphaParticle, ParticleSet, BetaParticle # has no dictionary imports. 
+from particleweightcalcs import update_alpha_dictionary # independent function
 
 class ParticleFilter(Grid):
     ''' Conducts particle filtering under the qslamr framework. Inherits from
@@ -131,19 +131,32 @@ class ParticleFilter(Grid):
 
     '''
 
-    def __init__(self, list_of_nodes_positions,**MODELDESIGN):
+    def __init__(self, **GLOBALDICT):
 
-        self.QubitGrid = Grid(list_of_nodes_positions=list_of_nodes_positions)
-        self.MODELDESIGN = MODELDESIGN
-        self.dgrid, self.diterq, self.R_MIN, self.R_MAX = self.set_uniform_prior_for_correlation()
-        empty_alpha_particles = [AlphaParticle() for idx in range(self.MODELDESIGN["P_ALPHA"])]
-        # self.resample_thresh = MODELDESIGN["GAMMA_T"]
+        self.GLOBALDICT = GLOBALDICT
+        NOISEPARAMS = self.GLOBALDICT["NOISEPARAMS"]
+        self.LikelihoodObj = ParticleFilter(**NOISEPARAMS)
         self.measurements_controls = None
+        
+        self.MODELDESIGN = self.GLOBALDICT["MODELDESIGN"]
+        self.PRIORDICT = self.GLOBALDICT["PRIORDICT"]
+
+        poskeys = sorted(self.GLOBALDICT["GRIDDICT"].keys)
+        posvals = [self.GLOBALDICT["GRIDDICT"][idx_key] for idx_key in poskeys]
+        LAMBDA_1 = self.MODELDESIGN["LAMBDA_1"]
+        SAMPLE_F = self.PRIORDICT["SAMPLE_F"]
+
+        self.QubitGrid = Grid(LAMBDA_1=LAMBDA_1,
+                              list_of_nodes_positions=posvals,
+                              **SAMPLE_F)
+
+        self.dgrid, self.diterq, self.R_MIN, self.R_MAX = self.set_uniform_prior_for_correlation()
+        
+        empty_alpha_particles = [AlphaParticle() for idx in range(self.MODELDESIGN["P_ALPHA"])]
+        self.AlphaSet = ParticleSet(empty_alpha_particles, 
+                                    **self.LikelihoodObj.WEIGHTFUNCDICT_ALPHA)
 
         # print "In __init__, created Alpha Particles" # TODO : Delete code. Printdebug only.
-
-        self.AlphaSet = ParticleSet(empty_alpha_particles, **WEIGHTFUNCDICT_ALPHA)
-
         # print "In __init__, new Alpha Particles have no beta later" # TODO : Delete code. Printdebug only.
         # print "Let's check new particles have no Beta Layer " # TODO : Delete code. Printdebug only.
         # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
@@ -183,16 +196,18 @@ class ParticleFilter(Grid):
         return d_grid, diterq, R_MIN, R_MAX
 
     def qslamr(self, measurements_controls=None, autocontrol="OFF",
-               cutoff_msmt=0, var_thres=1.0):
+               max_num_iterations=self.MODELDESIGN["MAX_NUM_ITERATIONS"],
+               var_thres=1.0):
         ''' Execute core numerical SLAM solver for qslamr module.
 
         Parameters:
         ----------
             measurements_controls : A list containing a measurement set and the control
-                directive of the location of the measured qubit.
+                directive of the location of the measured qubit. Each control directive
+                is a single iteration of the algorithm.
             autocontrol : "OFF" / "ON" flag. specifies whether next qubit measured
                 is specified as a user input or chosen by the algorithm
-            cutoff_msmt : Maximum number of measurements at which the algorithm terminates.
+            max_num_iterations : Maximum number of iterations at which the algorithm terminates.
             var_thres :[NOT USED] Error variance threshold where if the variance
                 of length scales is less than interqubit separation, then algorithm
                 terminates.
@@ -217,7 +232,7 @@ class ParticleFilter(Grid):
             PROTOCOL_ON = True
 
         # COMMENT: maximum no of msmts
-        max_msmts = max(len(self.measurements_controls), cutoff_msmt)
+        max_iter_condition = max(len(self.measurements_controls), max_num_iterations)
 
         # COMMENT: threshold error variance is within the min inter-qubit separation
         # stop_protocol = self.R_MIN**2 * var_thres * self.QubitGrid.number_of_nodes
@@ -234,7 +249,7 @@ class ParticleFilter(Grid):
 
             next_control_neighbourhood = self.particlefilter(msmt_control_pair)
 
-            if protocol_counter == max_msmts - 1:
+            if protocol_counter == max_iter_condition - 1:
                 print "PROTOCOL - SAFE END - Max number of measurements taken"
                 PROTOCOL_ON = False
 
@@ -308,8 +323,9 @@ class ParticleFilter(Grid):
             # has not been computed.
         ###### END  MSMT LOOP / ESTIMATE LOCALLY
 
-        ###### SHARE WITH NEIGHBOURHOOD / SMOOTHEN GLOBALLY
-        posterior_weights = self.ComputePosteriorWeights(control_j)
+        ###### SHARE WITH NEIGHBOURHOOD / SMOOTHEN GLOBALLY 
+        posterior_weights = self.ComputePosteriorWeights(control_j,
+                                                         **self.LikelihoodObj.WEIGHTFUNCDICT_BETA)
         self.ResampleParticles(posterior_weights) # no QubitGrid update
 
         # COMMENT: Update node j neighbourhood and map estimate
@@ -353,8 +369,8 @@ class ParticleFilter(Grid):
         -------
         '''
 
-        PRIORDICT["SAMPLE_R"]["ARGS"]["R_MIN"] = self.R_MIN
-        PRIORDICT["SAMPLE_R"]["ARGS"]["R_MAX"] = self.R_MAX
+        self.PRIORDICT["SAMPLE_R"]["ARGS"]["R_MIN"] = self.R_MIN
+        self.PRIORDICT["SAMPLE_R"]["ARGS"]["R_MAX"] = self.R_MAX
         size = self.QubitGrid.number_of_nodes
 
         substate_list = []
@@ -365,8 +381,8 @@ class ParticleFilter(Grid):
 
             if idx_key != "SAMPLE_F":
 
-                PRIORDICT[idx_key]["ARGS"]["SIZE"] = size
-                samples = PRIORDICT[idx_key]["FUNCTION"](**PRIORDICT[idx_key]["ARGS"])
+                self.PRIORDICT[idx_key]["ARGS"]["SIZE"] = size
+                samples = self.PRIORDICT[idx_key]["FUNCTION"](**self.PRIORDICT[idx_key]["ARGS"])
 
                 if idx_key == "SAMPLE_X":
                     samples += self.QubitGrid.get_all_nodes(["x_state"])
@@ -396,7 +412,9 @@ class ParticleFilter(Grid):
         # print "Qubit Grid f_state before measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
         self.QubitGrid.nodes[control_j].physcmsmtsum = next_phys_msmt_j
         prob_j = self.QubitGrid.nodes[control_j].sample_prob_from_msmts()
-        update_alpha_dictionary(next_phys_msmt_j, prob_j)
+        update_alpha_dictionary(next_phys_msmt_j,
+                                prob_j,
+                                **self.LikelihoodObj.LIKELIHOOD_ALPHA)
         # print "Qubit Grid f_state after measurement: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
         # print ''' --------- skip ReceiveMsmt ------------ ''' # TODO : Delete code. Printdebug only. 
         # print # TODO : Delete code. Printdebug only. 
@@ -462,7 +480,7 @@ class ParticleFilter(Grid):
         # print # TODO : Delete code. Printdebug only.
         # print # TODO : Delete code. Printdebug only.
 
-    def ComputePosteriorWeights(self, control_j):
+    def ComputePosteriorWeights(self, control_j, **BETADICT):
         ''' Return posterior weights for the joint distribution defined over both
         Alpha and Beta particles.
 
@@ -483,7 +501,7 @@ class ParticleFilter(Grid):
             alpha_particle.particle[f_state_index] = self.QubitGrid.nodes[control_j].f_state
             # print "Qubit Grid f_state assigned to alpha f_state prior to beta generation: ", self.QubitGrid.nodes[control_j].f_state # TODO : Delete code. Printdebug only.
             # print "For parent Alpha, there should be no beta BetaAlphaSet_j layer:",  alpha_particle.BetaAlphaSet_j # TODO : Delete code. Printdebug only.
-            beta_alpha_j_weights = self.generate_beta_layer(alpha_particle)
+            beta_alpha_j_weights = self.generate_beta_layer(alpha_particle, **BETADICT)
             # print "For parent Alpha, now we have a layer and the beta weights are:", beta_alpha_j_weights # TODO : Delete code. Printdebug only.
             posterior_weights.append(alpha_particle.weight*beta_alpha_j_weights)
 
@@ -513,7 +531,7 @@ class ParticleFilter(Grid):
         return  normalised_posterior_weights
 
 
-    def generate_beta_layer(self, alpha_particle):
+    def generate_beta_layer(self, alpha_particle, **BETADICT):
         ''' Return a set of Beta particle weights for a given Alpha parent. Helper
             function to ComputePosteriorWeights().
         Parameters:
@@ -546,7 +564,9 @@ class ParticleFilter(Grid):
         # print "In generate_beta_layer, at this point we have No beta layer" # TODO : Delete code. Printdebug only.
         # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
 
-        alpha_particle.generate_beta_pset(list_of_parent_states, list_of_length_samples)
+        alpha_particle.generate_beta_pset(list_of_parent_states,
+                                          list_of_length_samples,
+                                          **BETADICT)
 
         # print "In generate_beta_layer, now we should have a complete beta layer" # TODO : Delete code. Printdebug only.
         # print [alphaidx.BetaAlphaSet_j for alphaidx in self.AlphaSet.particles] # TODO : Delete code. Printdebug only.
