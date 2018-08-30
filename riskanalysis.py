@@ -15,6 +15,8 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 import copy 
 import qslamr as qs
+import numpy as np
+import os
 
 H_PARAM = ['LAMBDA_1', 'LAMBDA_2', 'SIGMOID_VAR', 'QUANT_VAR']
 
@@ -68,15 +70,15 @@ class Bayes_Risk(object):
 
         pass
 
-class CreateQslamExpt(bBayes_Risk):
+class CreateQslamExpt(Bayes_Risk):
     '''docstring'''
 
-    def __init__(self, bayes_params, **GLOBALDICT):
+    def __init__(self, **GLOBALDICT):
 
-        br.Bayes_Risk.__init__(self, bayes_params)
-        self.list_of_positions = list_of_positions
-        self.qslamobj = None
         self.GLOBALDICT = GLOBALDICT
+        RISKPARAMS = self.GLOBALDICT["RISKPARAMS"]
+        Bayes_Risk.__init__(self, **RISKPARAMS)
+        self.qslamobj = None
         self.filename_br = self.GLOBALDICT["MODELDESIGN"]["ID"] + '_BR_Map'
 
 
@@ -130,12 +132,12 @@ class CreateQslamExpt(bBayes_Risk):
 
         SAMPLE_GLOBAL_MODEL["MODELDESIGN"]["LAMBDA_1"] = samples[0]
         SAMPLE_GLOBAL_MODEL["MODELDESIGN"]["LAMBDA_2"] = samples[1]
-        SAMPLE_GLOBAL_MODEL["NOISEPARAMS"]["SIGMOID_APPROX_ERR"]["ARGS"]["SIGMA"] = samples[2]
-        SAMPLE_GLOBAL_MODEL["NOISEPARAMS"]["QUANT_UNCERTAINTY"]["ARGS"]["SIGMA"] = samples[3]
+        SAMPLE_GLOBAL_MODEL["NOISEPARAMS"]["SIGMOID_APPROX_ERROR"]["SIGMA"] = samples[2]
+        SAMPLE_GLOBAL_MODEL["NOISEPARAMS"]["QUANTISATION_UNCERTY"]["SIGMA"] = samples[3]
 
         return SAMPLE_GLOBAL_MODEL
 
-    def one_bayes_trial(self, samples=NONE):
+    def one_bayes_trial(self, samples=None):
         ''' Return true realisations, state etimation errors and prediction errors
         over max_it_BR repetitions for one (sigma, R) pair. '''
         SAMPLE_GLOBAL_MODEL = copy.deepcopy(self.GLOBALDICT)

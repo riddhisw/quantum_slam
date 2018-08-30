@@ -133,24 +133,20 @@ class ParticleSet(object):
         self.particles = list_of_particle_objects
         self.w_dict = WEIGHTFUNCDICT
         self.weights_set = (1.0 / self.p_set)*np.ones(self.p_set)
+        self.MAX_WEIGHT_CUTOFF = MAX_WEIGHT_CUTOFF
 
 
     def calc_weights_set(self):
         '''Return an array of normalised weights for a list of Particle objects.'''
         new_weight_set = []
 
-        # print # TODO : Delete code. Printdebug only.
-        # print "in calc_weight_set " # TODO : Delete code. Printdebug only.
-        # print "printting dictionary" # TODO : Delete code. Printdebug only.
-        # print self.w_dict["args"] # TODO : Delete code. Printdebug only.
-        # print # TODO : Delete code. Printdebug only.
 
         for particle in self.particles:
             new_weight = self.w_dict["function"](particle, **self.w_dict["args"])
 
-            if new_weight > MAX_WEIGHT_CUTOFF: # avoid inf
+            if new_weight > self.MAX_WEIGHT_CUTOFF: # avoid inf
                 # print "Large weight reset"
-                new_weight = float(MAX_WEIGHT_CUTOFF)
+                new_weight = float(self.MAX_WEIGHT_CUTOFF)
 
             new_weight_set.append(new_weight)
 
@@ -225,7 +221,6 @@ class AlphaParticle(Particle):
     def generate_beta_pset(self, parents, radii, **BETADICT):
         '''docstring'''
 
-        # print "Generating a Beta Layer!" # TODO : Delete code. Printdebug only.
 
         beta_s = []
         for idx in range(len(parents)): # TODO: Use enumerate
@@ -234,10 +229,6 @@ class AlphaParticle(Particle):
             beta_s.append(BetaParticle(self.node_j, state, radius))
         self.BetaAlphaSet_j = ParticleSet(beta_s, **BETADICT)
 
-        if  self.BetaAlphaSet_j is None: # TODO : Delete code. Printdebug only.
-            print "Empty Beta Layer Generated" # TODO : Delete code. Printdebug only.
-            raise RuntimeError # TODO : Delete code. Printdebug only.
-        # print "Beta Layer is not empty and is: ", self.BetaAlphaSet_j # TODO : Delete code. Printdebug only.
 
 class BetaParticle(Particle):
     '''Initiates a single Beta particle. Inherits from Particle.
@@ -333,8 +324,6 @@ class BetaParticle(Particle):
         ''' Builds smeared_phases_qj, the list of phase estimates for all
             neighbouring qubits around node_j, after a local measurement at node_j.
         '''
-        # print  # TODO : Delete code. Printdebug only.
-        # print "In particlesets.smear_fj_on_neighbours..." # TODO : Delete code. Printdebug only.
         
         self.get_neighbourhood_qj()
 
@@ -359,11 +348,5 @@ class BetaParticle(Particle):
 
             smear_phase = (1.0 - lambda_q)*f_state_q + lambda_q*kernel_val
 
-            # print "Measured qubit j - map value, lengscale", self.f_j, self.r_j # TODO : Delete code. Printdebug only.
-            # print 'Distance between qubits', dist_jq # TODO : Delete code. Printdebug only.
-            # print "Value from the kernel", kernel_val # TODO : Delete code. Printdebug only.
-            # print "Previosu posterior state at q", f_state_q # TODO : Delete code. Printdebug only.
-            # print "Smeared phase: ", smear_phase # TODO : Delete code. Printdebug only.
-            # print # TODO : Delete code. Printdebug only.
 
             self.smeared_phases_qj.append(smear_phase)

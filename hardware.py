@@ -258,7 +258,7 @@ class Grid(object):
 
         self.SAMPLE_F = SAMPLE_F
         self.SAMPLE_F["ARGS"]["SIZE"] = self.number_of_nodes
-        f_samples = self.SAMPLE_F["FUNCTION"](self.SAMPLE_F["ARGS"])
+        f_samples = self.SAMPLE_F["FUNCTION"](**self.SAMPLE_F["ARGS"])
         self.nodes = [Node(f_prior, LAMBDA_1) for f_prior in f_samples]
 
         self.__state_vector = 0.0

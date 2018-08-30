@@ -234,8 +234,8 @@ PRIORDICT = {"SAMPLE_X" : {"FUNCTION": sample_s_prior, "ARGS": S_PRIOR_ARGS},
 #################################### HYPERPARAMETER PRIOR DISTRIBUTIONS #########
 
 def sample_hyper_dist(space_size=None, **hyper_args):
-    hyper_args["MIN"] = L_MIN
-    hyper_args["MAX"] = L_MAX
+    L_MIN = hyper_args["MIN"]
+    L_MAX = hyper_args["MAX"]
     
     if space_size is None:
         sample = np.random.uniform(low=L_MIN, high = L_MAX, size=1)
@@ -262,19 +262,22 @@ hyper_args = {"LAMBDA_1": {"MIN": 0.9, "MAX": 1.0},
 HYPERDICT = {"DIST" : sample_hyper_dist,
              "ARGS" : hyper_args
             }
-##################################################### GLOBAL MODEL ###############
-GLOBALDICT = {"MODELDESIGN": MODELDESIGN,
-              "PRIORDICT" : PRIORDICT,
-              "NOISEPARAMS": NOISEPARAMS,
-              "GRIDDICT" : GRIDDICT
-             }
 
 ##################################################### RISK MODEL ###############
 
 RISKPARAMS = {"savetopath": './',
               "max_it_qslam": 1,
-              "max_it_BR": 50,
-              "num_randparams": 50,
+              "max_it_BR": 5,
+              "num_randparams": 3,
               "space_size": None,
               "loss_truncation":0.1
+             }
+
+##################################################### GLOBAL MODEL ###############
+GLOBALDICT = {"MODELDESIGN": MODELDESIGN,
+              "PRIORDICT" : PRIORDICT,
+              "NOISEPARAMS": NOISEPARAMS,
+              "GRIDDICT" : GRIDDICT,
+              "RISKPARAMS" : RISKPARAMS,
+              "HYPERDICT": HYPERDICT
              }
