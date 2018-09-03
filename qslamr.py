@@ -459,10 +459,7 @@ class ParticleFilter(Grid):
 
             alpha_particle = self.AlphaSet.particles[idx_alpha]
             alpha_particle.particle[f_state_index] = self.QubitGrid.nodes[control_j].f_state
-
-
             beta_alpha_j_weights = self.generate_beta_layer(alpha_particle, **BETADICT)
-
             posterior_weights.append(alpha_particle.weight*beta_alpha_j_weights)
 
         posterior_weights = np.asarray(posterior_weights).flatten()
@@ -470,18 +467,29 @@ class ParticleFilter(Grid):
 
         if normalisation == 0.0:
             # print "Zero value normalisation in ComputePosteriorWeights()"
-            # print posterior_weights
-            normalisation = 1.0 # All weights are zero.
-            # TODO Add a way to restart the syetem.
+            # print "Resetting to uniform weights"
+            normalised_posterior_weights = self.posterior_reset()
+            return normalised_posterior_weights
 
         normalised_posterior_weights = posterior_weights*(1.0/normalisation)
 
         if np.any(np.isnan(normalised_posterior_weights)):
             # print "Invalid Nan values encountered in ComputePosteriorWeights()"
-            # print normalised_posterior_weights
-            raise RuntimeError
+            # print "Resetting to uniform weights"
+            normalised_posterior_weights = self.posterior_reset()
+            return normalised_posterior_weights
 
+        # print "ComputePosteriorWeights() has no error - yay!"
         return  normalised_posterior_weights
+
+
+    def posterior_reset(self):
+        '''Return a uniform distribution following a singular or invalid
+        numerical posterior distribution'''
+
+        dims = float(self.MODELDESIGN["P_ALPHA"]) * float(self.MODELDESIGN["P_BETA"])
+        normalised_posterior_weights = (1.0 / dims)* np.ones(dims)
+        return normalised_posterior_weights
 
 
     def generate_beta_layer(self, alpha_particle, **BETADICT):
