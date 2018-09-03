@@ -256,8 +256,8 @@ def func_x0(space_size):
 
 hyper_args = {"LAMBDA_1": {"MIN": 0.9, "MAX": 1.0},
               "LAMBDA_2": {"MIN": 0.9, "MAX": 1.0},
-              "SIGMOID_VAR": {"MIN": 0.9, "MAX": 1.0},
-              "QUANT_VAR": {"MIN": 0.9, "MAX": 1.0}
+              "SIGMOID_VAR": {"MIN": 0., "MAX": 1.0},
+              "QUANT_VAR": {"MIN": 0., "MAX": 1.0}
               }
 HYPERDICT = {"DIST" : sample_hyper_dist,
              "ARGS" : hyper_args
@@ -267,8 +267,8 @@ HYPERDICT = {"DIST" : sample_hyper_dist,
 
 RISKPARAMS = {"savetopath": './',
               "max_it_qslam": 1,
-              "max_it_BR": 5,
-              "num_randparams": 3,
+              "max_it_BR": 50,
+              "num_randparams": 1,
               "space_size": None,
               "loss_truncation":0.1
              }

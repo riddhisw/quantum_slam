@@ -200,6 +200,10 @@ class Node(object):
         born_prob = np.cos(map_val / 2.0)**2
         return born_prob
 
+    @staticmethod
+    def quantiser(born_prob):
+        flip = np.random.binomial(1, born_prob)
+        return flip
 
     @staticmethod
     def inverse_born(born_prob):

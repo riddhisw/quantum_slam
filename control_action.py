@@ -63,7 +63,7 @@ def control_lengthscale_uncertainty(listofcontrolparameters,
 
     if len(next_control_neighbourhood) == 0:
         mask = np.ones(len(labelled_params), dtype=bool) # Mask for showing all values.
-        print "Control List empty"
+        print "Control List empty; randomly chosen qubit on grid."
 
     if len(next_control_neighbourhood) > 0:
         mask = np.zeros(len(labelled_params), dtype=bool) # Mask for hiding all values.

@@ -241,7 +241,7 @@ class ParticleFilter(Grid):
             next_control_neighbourhood = self.particlefilter(msmt_control_pair)
 
             if protocol_counter == max_iter_condition - 1:
-                print "PROTOCOL - SAFE END - Max number of measurements taken"
+                # print "PROTOCOL - SAFE END - Max number of measurements taken"
                 PROTOCOL_ON = False
 
             run_variance = self.QubitGrid.get_all_nodes(["r_state_variance"])
@@ -469,16 +469,16 @@ class ParticleFilter(Grid):
         normalisation = np.sum(posterior_weights)
 
         if normalisation == 0.0:
-            print "Zero value normalisation in ComputePosteriorWeights()"
-            print posterior_weights
+            # print "Zero value normalisation in ComputePosteriorWeights()"
+            # print posterior_weights
             normalisation = 1.0 # All weights are zero.
             # TODO Add a way to restart the syetem.
 
         normalised_posterior_weights = posterior_weights*(1.0/normalisation)
 
         if np.any(np.isnan(normalised_posterior_weights)):
-            print "Invalid Nan values encountered in ComputePosteriorWeights()"
-            print normalised_posterior_weights
+            # print "Invalid Nan values encountered in ComputePosteriorWeights()"
+            # print normalised_posterior_weights
             raise RuntimeError
 
         return  normalised_posterior_weights
@@ -712,7 +712,7 @@ class ParticleFilter(Grid):
 
             if quasi_phase_q >= 0.0 and quasi_phase_q <= np.pi:
                 born_prob_q = Node.born_rule(quasi_phase_q)
-                quasi_msmt = np.random.binomial(1, born_prob_q)
+                quasi_msmt = Node.quantiser(born_prob_q)
                 self.QubitGrid.nodes[neighbour_q].quasimsmtsum = quasi_msmt
 
             elif quasi_phase_q < 0.0 or quasi_phase_q > np.pi:
