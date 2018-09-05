@@ -21,56 +21,11 @@ import os
 H_PARAM = ['LAMBDA_1', 'LAMBDA_2', 'SIGMOID_VAR', 'QUANT_VAR']
 
 from hardware import Node
-
-class NaiveEstimator(object):
-
-    def __init__(self, dims=25, typeofmap='Uniform', msmt_per_node=1, numofnodes=None):
-
-        self.truth_generator = EngineeredTruth(dims=dims, typeofmap=typeofmap)
-        self.msmt_per_node = msmt_per_node
-        self.numofnodes = numofnodes
-
-        if self.numofnodes is None:
-            self.numofnodes = dims
-
-        self.__total_msmt_budget = self.numofnodes * self.msmt_per_node
-        self.empirical_estimate = None
-
-    @property
-    def total_msmt_budget(self):
-        return self.numofnodes * self.msmt_per_node
-
-    def get_empirical_est(self):
-
-        phase_map = self.truth_generator.get_map()
-
-        if len(phase_map) == self.numofnodes:
-            mask = np.ones(self.numofnodes, dtype=bool)
-
-        if len(phase_map) > self.numofnodes:
-
-            randomly_choose = np.random.randint(low=0,
-                                                high=len(phase_map),
-                                                size=self.numofnodes)
-            mask = np.zeros(len(phase_map), dtype=bool) # Mask for hiding all values.
-            mask[randomly_choose] = True
-
-        node_labels = np.arange(len(phase_map))
-        self.empirical_estimate = np.zeros(len(phase_map))
-
-        for idx_node in node_labels[mask]:
-            single_shots = [ Node.quantiser(Node.born_rule(phase_map[idx_node])) for idx_shot in range(self.msmt_per_node)]
-            self.empirical_estimate[idx_node] = Node.inverse_born(np.mean(np.asarray(single_shots, dtype=float)))
-
-        maperrors =  self.empirical_estimate - phase_map
-        
-        return  maperrors
-
 class EngineeredTruth(object):
     ''' Generates true maps for Bayes Risk analysis'''
-    def __init__(self, dims=25, typeofmap='Uniform'):
+    def __init__(self, dims=25, truthtype='Uniform'):
 
-        self.type = typeofmap
+        self.type = truthtype
         self.dims = dims
 
     def get_map(self):
@@ -103,6 +58,71 @@ class EngineeredTruth(object):
 
         return truemap
 
+class NaiveEstimator(object):
+
+    def __init__(self,
+                 truthtype='Uniform',
+                 msmt_per_node=1,
+                 numofnodes=25,
+                 max_num_iterations=None):
+
+
+        self.msmt_per_node = msmt_per_node
+        self.numofnodes = numofnodes
+        self.max_num_iterations = max_num_iterations
+        self.truth_generator = EngineeredTruth(dims=self.numofnodes,
+                                               truthtype=truthtype)
+        self.empirical_estimate = None
+
+        self.__total_msmt_budget = self.msmt_per_node * self.max_num_iterations
+
+    @property
+    def total_msmt_budget(self):
+        return self.msmt_per_node * self.max_num_iterations
+
+    def get_empirical_est(self):
+
+        # print "Got get_empirical_est()"
+        phase_map = self.truth_generator.get_map()
+
+        if self.numofnodes <= self.max_num_iterations:
+            if self.max_num_iterations / self.numofnodes == self.msmt_per_node:
+                mask = np.ones(self.numofnodes, dtype=bool)
+                # print "No reset required"
+            if self.max_num_iterations / self.numofnodes != self.msmt_per_node:
+                # print "msmt_per_node, ", self.msmt_per_node
+                # print "max_num_iterations", self.max_num_iterations
+                # print "total_msmt_budget", self.total_msmt_budget
+                # print "numofnodes", self.numofnodes
+                # print "reset value", int(self.total_msmt_budget / self.numofnodes)
+                self.msmt_per_node = int(self.total_msmt_budget / self.numofnodes)
+                mask = np.ones(self.numofnodes, dtype=bool)
+
+        if self.numofnodes > self.max_num_iterations:
+
+            randomly_choose = np.random.choice(self.numofnodes, self.max_num_iterations, replace=False)
+            # This produces duplicate integers which then result in a mask that is shorted than self.max_num_iterations
+            # randomly_choose = np.random.randint(low=0,
+            #                                     high=self.numofnodes,
+            #                                     size=self.max_num_iterations)
+            mask = np.zeros(self.numofnodes, dtype=bool) # Mask for hiding all values.
+            mask[randomly_choose] = True
+            # print "max_num_iterations", self.max_num_iterations
+            # print "randomly_choose", randomly_choose
+
+        node_labels = np.arange(self.numofnodes)
+        self.empirical_estimate = np.zeros(self.numofnodes)
+        # print "Mask", mask
+        # print "Chosen nodes", node_labels[mask]
+
+        for idx_node in node_labels[mask]:
+            single_shots = [ Node.quantiser(Node.born_rule(phase_map[idx_node])) for idx_shot in range(self.msmt_per_node)]
+            self.empirical_estimate[idx_node] = Node.inverse_born(np.mean(np.asarray(single_shots, dtype=float)))
+
+        return self.empirical_estimate, phase_map
+
+        # maperrors =  self.empirical_estimate - phase_map # RETAIN FOR BACKWARD COMPATIBILITY
+        # return  maperrors # RETAIN  FOR BACKWARD COMPATIBILITY
 
 class Bayes_Risk(object):
     ''' Stores Bayes Risk map for a scenario specified by (testcase, variation)
@@ -143,7 +163,7 @@ class Bayes_Risk(object):
         self.space_size  = RISKPARAMS["space_size"]
         self.loss_truncation = RISKPARAMS["loss_truncation"]
 
-        self.truemap_generator = EngineeredTruth(typeofmap=truthtype)
+        self.truemap_generator = EngineeredTruth(truthtype=truthtype)
 
         self.filename_br = None
         self.macro_true_fstate = None
@@ -295,15 +315,100 @@ class CreateQslamExpt(Bayes_Risk):
         self.did_BR_Map = True
 
 
+class CreateNaiveExpt(Bayes_Risk):
+    '''docstring'''
 
-    # def get_tuned_params(self, max_forecast_loss):
-    #     '''[Helper function for Bayes Risk mapping]'''
-    #     self.means_lists_, self.lowest_pred_BR_pair, self.lowest_fore_BR_pair = get_tuned_params_(max_forecast_loss,
-    #                                                                                               np.array(self.num_randparams),
-    #                                                                                               np.array(self.macro_prediction_errors)
-    # def set_tuned_params(self):
-    #     '''[Helper function for Bayes Risk mapping]'''
-    #     self.optimal_sigma = self.lowest_pred_BR_pair[0]
-    #     self.optimal_R = self.lowest_pred_BR_pair[1]
+    def __init__(self, truthtype='Uniform', **GLOBALDICT):
+
+        self.GLOBALDICT = GLOBALDICT
+        RISKPARAMS = self.GLOBALDICT["RISKPARAMS"]
+        Bayes_Risk.__init__(self, truthtype=truthtype, **RISKPARAMS)
+        self.naiveobj = None
+        self.filename_br = self.GLOBALDICT["MODELDESIGN"]["ID"] + '_NE_Map'
+        self.truthtype = truthtype
 
 
+    def loss(self, posterior_state, true_state_):
+        '''Return squared error cost (objective function) between
+        engineered truth and algorithm posterior state.
+
+        Parameters:
+        ----------
+            posterior_state (`float64` | Numpy array | dims: N) :
+                Posterior state estimates in vector form.
+            true_state_ (`float64` | Numpy array | dims: N) :
+                One realisation of (engineered) true state in vector form.
+        Returns:
+        -------
+            residuals_errors : errors between algorithm
+                output and engineered truths.
+        '''
+        residuals_errors = posterior_state - true_state_
+        return residuals_errors
+
+
+    def map_loss_trial(self):
+
+        '''Return an error vector for map reconstruction from one trial of an algorithm.'''
+
+        self.naiveobj = NaiveEstimator(truthtype=self.truthtype,
+                                       msmt_per_node=self.GLOBALDICT["MODELDESIGN"]["MSMTS_PER_NODE"],
+                                       numofnodes=len(self.GLOBALDICT["GRIDDICT"]),
+                                       max_num_iterations=self.GLOBALDICT["MODELDESIGN"]["MAX_NUM_ITERATIONS"])
+        # print "msmt_per_node", self.naiveobj.msmt_per_node
+        posterior_map, true_map_ = self.naiveobj.get_empirical_est()
+        # print "After naiveobj.get_empirical_est(): ", self.naiveobj.msmt_per_node
+        map_residuals = self.loss(posterior_map, true_map_)
+
+        return true_map_, posterior_map, map_residuals
+
+
+    def one_bayes_trial(self):
+        ''' Return true realisations, state etimation errors and prediction errors
+        over max_it_BR repetitions for one (sigma, R) pair. '''
+
+        predictions = []
+        map_errors = []
+        true_maps = []
+
+        for ind in xrange(self.max_it_BR):
+
+            true_map_, posterior, errors = self.map_loss_trial()
+
+            true_maps.append(true_map_)
+            predictions.append(posterior)
+            map_errors.append(errors)
+
+        return true_maps, predictions, map_errors
+
+    def naive_implementation(self, num_randparams=1):
+        ''' Return Bayes Risk analysis as a saved .npz file over max_it_BR
+        repetitions of true dephasing noise and simulated datasets
+
+        Returns:
+        -------
+            Output .npz file containing all Bayes Risk data for analysis.
+        '''
+        self.num_randparams = num_randparams
+        self.macro_predictions = []
+        self.macro_residuals = []
+        self.macro_true_fstate = []
+
+        for ind in xrange(self.num_randparams):
+            
+            
+            full_bayes_map = self.one_bayes_trial()
+            # print "After one Bayes trial: ", self.naiveobj.msmt_per_node
+
+            self.macro_true_fstate.append(full_bayes_map[0])
+            self.macro_predictions.append(full_bayes_map[1])
+            self.macro_residuals.append(full_bayes_map[2])
+
+            np.savez(os.path.join(self.savetopath, self.filename_br),
+                     macro_true_fstate=self.macro_true_fstate,
+                     macro_predictions=self.macro_predictions,
+                     macro_residuals=self.macro_residuals,
+                     max_it_BR=self.max_it_BR,
+                     num_randparams=self.num_randparams,
+                     savetopath=self.savetopath)
+        self.did_BR_Map = True
