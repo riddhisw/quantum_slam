@@ -111,7 +111,20 @@ class NaiveEstimator(object):
             # print "randomly_choose", randomly_choose
 
         node_labels = np.arange(self.numofnodes)
-        self.empirical_estimate = np.zeros(self.numofnodes)
+        
+        
+        ### INITIALISATION IMPORTANT!!!
+
+        # self.empirical_estimate = np.zeros(self.numofnodes) # very optimistic
+
+        self.empirical_estimate = np.ones(self.numofnodes) * np.random.randint(low=0.0, # physically says we don't know anything except its some radian between 0, 2pi and conitnuous
+                                                                               high=np.pi,
+                                                                               size=1)
+        
+        # self.empirical_estimate = np.random.randint(low=0.0, # physically unreal
+                                                    # high=np.pi,
+                                                    # size=self.numofnodes)
+        
         # print "Mask", mask
         # print "Chosen nodes", node_labels[mask]
 
@@ -153,7 +166,7 @@ class Bayes_Risk(object):
             samples of (sigma, R).
     '''
 
-    def __init__(self, truthtype='Uniform', **RISKPARAMS):
+    def __init__(self, numofnodes=25, truthtype='Uniform', **RISKPARAMS):
         '''Initiates a Bayes_Risk class instance. '''
 
         self.savetopath = RISKPARAMS["savetopath"]
@@ -162,8 +175,10 @@ class Bayes_Risk(object):
         self.num_randparams = RISKPARAMS["num_randparams"]
         self.space_size  = RISKPARAMS["space_size"]
         self.loss_truncation = RISKPARAMS["loss_truncation"]
+        self.numofnodes = numofnodes # Default
 
-        self.truemap_generator = EngineeredTruth(truthtype=truthtype)
+        self.truemap_generator = EngineeredTruth(dims=self.numofnodes,
+                                                 truthtype=truthtype)
 
         self.filename_br = None
         self.macro_true_fstate = None
@@ -183,7 +198,10 @@ class CreateQslamExpt(Bayes_Risk):
 
         self.GLOBALDICT = GLOBALDICT
         RISKPARAMS = self.GLOBALDICT["RISKPARAMS"]
-        Bayes_Risk.__init__(self, truthtype=truthtype, **RISKPARAMS)
+        Bayes_Risk.__init__(self,
+                            numofnodes=len(GLOBALDICT["GRIDDICT"]),
+                            truthtype=truthtype,
+                            **RISKPARAMS)
         self.qslamobj = None
         self.filename_br = self.GLOBALDICT["MODELDESIGN"]["ID"] + '_BR_Map'
 
