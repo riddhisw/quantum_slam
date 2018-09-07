@@ -23,16 +23,40 @@ H_PARAM = ['LAMBDA_1', 'LAMBDA_2', 'SIGMOID_VAR', 'QUANT_VAR']
 from hardware import Node
 class EngineeredTruth(object):
     ''' Generates true maps for Bayes Risk analysis'''
-    def __init__(self, dims=25, truthtype='Uniform'):
+    def __init__(self, numberofnodes, TRUTHKWARGS): # TODO Variable truthtype='Gaussian'
 
-        self.type = truthtype
-        self.dims = dims
+        self.type = TRUTHKWARGS["truthtype"]
+        self.dims = numberofnodes
+        self.TRUTHKWARGS  = TRUTHKWARGS
 
     def get_map(self):
 
         if self.type == 'Uniform':
 
             truemap = np.ones(self.dims)*0.456*np.pi
+
+        if self.type == 'OneStep':
+            truemap = np.ones(self.dims)*np.random.uniform(low=0., high=np.pi*0.5)
+            barrierdims = int(float(self.dims)* 0.4)
+            truemap[barrierdims:] = np.ones(self.dims-barrierdims)*np.random.uniform(low=np.pi*0.5, high=np.pi)
+
+        if self.type == 'OneStepd':
+            lowfloor = self.TRUTHKWARGS["OneStepdheight"]["low"]
+            highbarrier = self.TRUTHKWARGS["OneStepdheight"]["high"]
+            truemap = np.ones(self.dims) * lowfloor
+            barrierdims = int(float(self.dims)* 0.4)
+            truemap[barrierdims:] = np.ones(self.dims-barrierdims) * highbarrier
+
+        if self.type == 'OneStepq':
+            tuner = self.TRUTHKWARGS["OneStepdheight"]["high"]
+            truemap = np.ones(self.dims)*self.TRUTHKWARGS["OneStepdheight"]["low"]
+            quarter = int((np.sqrt(self.dims)/2.0))
+            grid = truemap.reshape(int(np.sqrt(self.dims)), int(np.sqrt(self.dims)))
+            grid[0:quarter,0:quarter] = tuner*np.ones_like(grid[0:quarter,0:quarter])
+            grid[quarter:,quarter:] = tuner*np.ones_like(grid[quarter:,quarter:])
+            if np.sqrt(self.dims)/2.0 % 1 != 0:
+                grid[quarter, :] = tuner*np.ones_like((grid[quarter, :] ))
+                grid[:, quarter] = tuner*np.ones_like((grid[:, quarter] ))
 
         if self.type == 'Gaussian':
 
@@ -61,17 +85,16 @@ class EngineeredTruth(object):
 class NaiveEstimator(object):
 
     def __init__(self,
-                 truthtype='Uniform',
+                 TRUTHKWARGS,
                  msmt_per_node=1,
                  numofnodes=25,
-                 max_num_iterations=None):
+                 max_num_iterations=None): 
 
 
         self.msmt_per_node = msmt_per_node
         self.numofnodes = numofnodes
         self.max_num_iterations = max_num_iterations
-        self.truth_generator = EngineeredTruth(dims=self.numofnodes,
-                                               truthtype=truthtype)
+        self.truth_generator = EngineeredTruth(self.numofnodes, TRUTHKWARGS)
         self.empirical_estimate = None
 
         self.__total_msmt_budget = self.msmt_per_node * self.max_num_iterations
@@ -166,7 +189,7 @@ class Bayes_Risk(object):
             samples of (sigma, R).
     '''
 
-    def __init__(self, numofnodes=25, truthtype='Uniform', **RISKPARAMS):
+    def __init__(self, numofnodes, TRUTHKWARGS, RISKPARAMS):
         '''Initiates a Bayes_Risk class instance. '''
 
         self.savetopath = RISKPARAMS["savetopath"]
@@ -177,8 +200,7 @@ class Bayes_Risk(object):
         self.loss_truncation = RISKPARAMS["loss_truncation"]
         self.numofnodes = numofnodes # Default
 
-        self.truemap_generator = EngineeredTruth(dims=self.numofnodes,
-                                                 truthtype=truthtype)
+        self.truemap_generator = EngineeredTruth(self.numofnodes, TRUTHKWARGS)
 
         self.filename_br = None
         self.macro_true_fstate = None
@@ -194,14 +216,14 @@ class Bayes_Risk(object):
 class CreateQslamExpt(Bayes_Risk):
     '''docstring'''
 
-    def __init__(self, truthtype='Uniform', **GLOBALDICT):
+    def __init__(self, TRUTHKWARGS, GLOBALDICT):
 
         self.GLOBALDICT = GLOBALDICT
         RISKPARAMS = self.GLOBALDICT["RISKPARAMS"]
         Bayes_Risk.__init__(self,
-                            numofnodes=len(GLOBALDICT["GRIDDICT"]),
-                            truthtype=truthtype,
-                            **RISKPARAMS)
+                            len(GLOBALDICT["GRIDDICT"]),
+                            TRUTHKWARGS,
+                            RISKPARAMS)
         self.qslamobj = None
         self.filename_br = self.GLOBALDICT["MODELDESIGN"]["ID"] + '_BR_Map'
 
@@ -225,13 +247,14 @@ class CreateQslamExpt(Bayes_Risk):
         return residuals_errors
 
     def map_loss_trial(self, true_map_,
+                       SAMPLE_GLOBAL_MODEL,
                        measurements_controls_=None,
                        autocontrol_="ON",
-                       var_thres_=1.0, **SAMPLE_GLOBAL_MODEL):
+                       var_thres_=1.0):
 
         '''Return an error vector for map reconstruction from one trial of an algorithm.'''
 
-        self.qslamobj = qs.ParticleFilter(**SAMPLE_GLOBAL_MODEL)
+        self.qslamobj = qs.ParticleFilter(SAMPLE_GLOBAL_MODEL)
         self.qslamobj.QubitGrid.engineeredtruemap = true_map_
 
         self.qslamobj.qslamr(measurements_controls=measurements_controls_,
@@ -240,19 +263,20 @@ class CreateQslamExpt(Bayes_Risk):
                              var_thres=var_thres_)
 
         posterior_map = self.qslamobj.QubitGrid.get_all_nodes(["f_state"])
+        posterior_corrs = self.qslamobj.QubitGrid.get_all_nodes(["r_state"])
 
         map_residuals = self.loss(posterior_map, true_map_)
 
-        return posterior_map, map_residuals
+        return posterior_map, map_residuals, posterior_corrs
 
-    def rand_param(self, **SAMPLE_GLOBAL_MODEL):
+    def rand_param(self, SAMPLE_GLOBAL_MODEL):
         ''' Return a randomly sampled hyper-parameter vector. '''
 
         HYPERDICT = SAMPLE_GLOBAL_MODEL["HYPERDICT"]
         samples = [HYPERDICT["DIST"](space_size=self.space_size, **HYPERDICT["ARGS"][param]) for param in H_PARAM]
         return samples
 
-    def modify_global_model(self, samples, **SAMPLE_GLOBAL_MODEL):
+    def modify_global_model(self, samples, SAMPLE_GLOBAL_MODEL):
 
         SAMPLE_GLOBAL_MODEL["MODELDESIGN"]["LAMBDA_1"] = samples[0]
         SAMPLE_GLOBAL_MODEL["MODELDESIGN"]["LAMBDA_2"] = samples[1]
@@ -268,25 +292,27 @@ class CreateQslamExpt(Bayes_Risk):
         SAMPLE_GLOBAL_MODEL = copy.deepcopy(self.GLOBALDICT)
 
         if samples is None:
-            samples = self.rand_param(**SAMPLE_GLOBAL_MODEL)
+            samples = self.rand_param(SAMPLE_GLOBAL_MODEL)
 
-        SAMPLE_GLOBAL_MODEL = self.modify_global_model(samples, **SAMPLE_GLOBAL_MODEL)
+        SAMPLE_GLOBAL_MODEL = self.modify_global_model(samples, SAMPLE_GLOBAL_MODEL)
 
         predictions = []
         map_errors = []
         true_maps = []
+        correlations = []
 
         for ind in xrange(self.max_it_BR):
 
             # true_map_ = 0.75 * np.pi * np.ones(len(SAMPLE_GLOBAL_MODEL["GRIDDICT"]))
             true_map_ = self.truemap_generator.get_map()
-            posterior, errors = self.map_loss_trial(true_map_, **SAMPLE_GLOBAL_MODEL)
+            posterior, errors, posterior_corrs = self.map_loss_trial(true_map_, SAMPLE_GLOBAL_MODEL)
 
             true_maps.append(true_map_)
             predictions.append(posterior)
             map_errors.append(errors)
+            correlations.append(posterior_corrs)
         
-        return true_maps, predictions, map_errors, samples
+        return true_maps, predictions, map_errors, samples, correlations
 
     def naive_implementation(self, randomise='OFF'):
         ''' Return Bayes Risk analysis as a saved .npz file over max_it_BR
@@ -302,6 +328,7 @@ class CreateQslamExpt(Bayes_Risk):
         self.macro_predictions = []
         self.macro_residuals = []
         self.macro_true_fstate = []
+        self.macro_correlations = []
 
         # start_outer_multp = t.time()
 
@@ -320,11 +347,13 @@ class CreateQslamExpt(Bayes_Risk):
             self.macro_predictions.append(full_bayes_map[1])
             self.macro_residuals.append(full_bayes_map[2])
             self.macro_hyperparams.append(full_bayes_map[3])
+            self.macro_correlations.append(full_bayes_map[4])
 
             np.savez(os.path.join(self.savetopath, self.filename_br),
                      macro_true_fstate=self.macro_true_fstate,
                      macro_predictions=self.macro_predictions,
                      macro_residuals=self.macro_residuals,
+                     macro_correlations=self.macro_correlations,
                      macro_hyperparams=self.macro_hyperparams,
                      max_it_BR=self.max_it_BR,
                      num_randparams=self.num_randparams,
@@ -336,14 +365,17 @@ class CreateQslamExpt(Bayes_Risk):
 class CreateNaiveExpt(Bayes_Risk):
     '''docstring'''
 
-    def __init__(self, truthtype='Uniform', **GLOBALDICT):
+    def __init__(self, TRUTHKWARGS, GLOBALDICT):
 
         self.GLOBALDICT = GLOBALDICT
         RISKPARAMS = self.GLOBALDICT["RISKPARAMS"]
-        Bayes_Risk.__init__(self, truthtype=truthtype, **RISKPARAMS)
+        Bayes_Risk.__init__(self,
+                            len(self.GLOBALDICT["GRIDDICT"]),
+                            TRUTHKWARGS,
+                            RISKPARAMS)
         self.naiveobj = None
         self.filename_br = self.GLOBALDICT["MODELDESIGN"]["ID"] + '_NE_Map'
-        self.truthtype = truthtype
+        # self.truthtype = TRUTHKWARGS["truthtype"]
 
 
     def loss(self, posterior_state, true_state_):
@@ -369,7 +401,7 @@ class CreateNaiveExpt(Bayes_Risk):
 
         '''Return an error vector for map reconstruction from one trial of an algorithm.'''
 
-        self.naiveobj = NaiveEstimator(truthtype=self.truthtype,
+        self.naiveobj = NaiveEstimator(self.truemap_generator.TRUTHKWARGS,
                                        msmt_per_node=self.GLOBALDICT["MODELDESIGN"]["MSMTS_PER_NODE"],
                                        numofnodes=len(self.GLOBALDICT["GRIDDICT"]),
                                        max_num_iterations=self.GLOBALDICT["MODELDESIGN"]["MAX_NUM_ITERATIONS"])
