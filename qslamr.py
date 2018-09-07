@@ -131,7 +131,7 @@ class ParticleFilter(Grid):
 
     '''
 
-    def __init__(self, **GLOBALDICT):
+    def __init__(self, GLOBALDICT):
 
         self.GLOBALDICT = GLOBALDICT
         self.MODELDESIGN = self.GLOBALDICT["MODELDESIGN"]
