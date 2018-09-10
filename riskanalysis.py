@@ -266,8 +266,9 @@ class CreateQslamExpt(Bayes_Risk):
         posterior_corrs = self.qslamobj.QubitGrid.get_all_nodes(["r_state"])
 
         map_residuals = self.loss(posterior_map, true_map_)
+        controlpath = self.qslamobj.QubitGrid.control_sequence
 
-        return posterior_map, map_residuals, posterior_corrs
+        return posterior_map, map_residuals, posterior_corrs, controlpath
 
     def rand_param(self, SAMPLE_GLOBAL_MODEL):
         ''' Return a randomly sampled hyper-parameter vector. '''
@@ -300,19 +301,21 @@ class CreateQslamExpt(Bayes_Risk):
         map_errors = []
         true_maps = []
         correlations = []
+        paths = []
 
         for ind in xrange(self.max_it_BR):
 
             # true_map_ = 0.75 * np.pi * np.ones(len(SAMPLE_GLOBAL_MODEL["GRIDDICT"]))
             true_map_ = self.truemap_generator.get_map()
-            posterior, errors, posterior_corrs = self.map_loss_trial(true_map_, SAMPLE_GLOBAL_MODEL)
+            posterior, errors, posterior_corrs, controlpath = self.map_loss_trial(true_map_, SAMPLE_GLOBAL_MODEL)
 
             true_maps.append(true_map_)
             predictions.append(posterior)
             map_errors.append(errors)
             correlations.append(posterior_corrs)
+            paths.append(controlpath)
         
-        return true_maps, predictions, map_errors, samples, correlations
+        return true_maps, predictions, map_errors, samples, correlations, paths
 
     def naive_implementation(self, randomise='OFF'):
         ''' Return Bayes Risk analysis as a saved .npz file over max_it_BR
@@ -329,6 +332,7 @@ class CreateQslamExpt(Bayes_Risk):
         self.macro_residuals = []
         self.macro_true_fstate = []
         self.macro_correlations = []
+        self.macro_paths = []
 
         # start_outer_multp = t.time()
 
@@ -348,12 +352,14 @@ class CreateQslamExpt(Bayes_Risk):
             self.macro_residuals.append(full_bayes_map[2])
             self.macro_hyperparams.append(full_bayes_map[3])
             self.macro_correlations.append(full_bayes_map[4])
+            self.macro_paths.append(full_bayes_map[5])
 
             np.savez(os.path.join(self.savetopath, self.filename_br),
                      macro_true_fstate=self.macro_true_fstate,
                      macro_predictions=self.macro_predictions,
                      macro_residuals=self.macro_residuals,
                      macro_correlations=self.macro_correlations,
+                     macro_paths=self.macro_paths,
                      macro_hyperparams=self.macro_hyperparams,
                      max_it_BR=self.max_it_BR,
                      num_randparams=self.num_randparams,

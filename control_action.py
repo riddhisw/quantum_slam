@@ -147,4 +147,5 @@ def controller(listofcontrolparameters, next_control_neighbourhood, controltype=
     elif len(listofcontrolparameters) == 0:
 
         print "Input control parameters empty."
+        print "Runtime Error raised"
         raise RuntimeError
