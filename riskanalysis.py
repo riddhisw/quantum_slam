@@ -43,8 +43,9 @@ class EngineeredTruth(object):
         if self.type == 'OneStepd':
             lowfloor = self.TRUTHKWARGS["OneStepdheight"]["low"]
             highbarrier = self.TRUTHKWARGS["OneStepdheight"]["high"]
+            floorarea = self.TRUTHKWARGS["OneStepdfloorarea"]
             truemap = np.ones(self.dims) * lowfloor
-            barrierdims = int(float(self.dims)* 0.4)
+            barrierdims = int(float(self.dims)* floorarea)
             truemap[barrierdims:] = np.ones(self.dims-barrierdims) * highbarrier
 
         if self.type == 'OneStepq':
