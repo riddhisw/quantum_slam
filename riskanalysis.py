@@ -104,21 +104,16 @@ class NaiveEstimator(object):
     def total_msmt_budget(self):
         return self.msmt_per_node * self.max_num_iterations
 
-    def get_empirical_est(self):
+    def get_empirical_est(self, addnoise=None):
 
-        # print "Got get_empirical_est()"
         phase_map = self.truth_generator.get_map()
 
         if self.numofnodes <= self.max_num_iterations:
+
             if self.max_num_iterations / self.numofnodes == self.msmt_per_node:
                 mask = np.ones(self.numofnodes, dtype=bool)
-                # print "No reset required"
+
             if self.max_num_iterations / self.numofnodes != self.msmt_per_node:
-                # print "msmt_per_node, ", self.msmt_per_node
-                # print "max_num_iterations", self.max_num_iterations
-                # print "total_msmt_budget", self.total_msmt_budget
-                # print "numofnodes", self.numofnodes
-                # print "reset value", int(self.total_msmt_budget / self.numofnodes)
                 self.msmt_per_node = int(self.total_msmt_budget / self.numofnodes)
                 mask = np.ones(self.numofnodes, dtype=bool)
 
@@ -153,8 +148,17 @@ class NaiveEstimator(object):
         # print "Chosen nodes", node_labels[mask]
 
         for idx_node in node_labels[mask]:
-            single_shots = [ Node.quantiser(Node.born_rule(phase_map[idx_node])) for idx_shot in range(self.msmt_per_node)]
-            self.empirical_estimate[idx_node] = Node.inverse_born(np.mean(np.asarray(single_shots, dtype=float)))
+
+            single_shots = [Node.quantiser(Node.born_rule(phase_map[idx_node])) for idx_shot in range(self.msmt_per_node)]
+
+            if addnoise is not None:
+                noisy_single_shots = addnoise["func"](single_shots, **addnoise["args"])
+                self.empirical_estimate[idx_node] = Node.inverse_born(np.mean(np.asarray(noisy_single_shots, dtype=float)))
+
+            elif addnoise is None:
+                print "There is no noise process dictionary (NaiveEstimator.get_empirical_est)."
+                self.empirical_estimate[idx_node] = Node.inverse_born(np.mean(np.asarray(single_shots, dtype=float)))
+
 
         return self.empirical_estimate, phase_map
 
@@ -413,7 +417,7 @@ class CreateNaiveExpt(Bayes_Risk):
                                        numofnodes=len(self.GLOBALDICT["GRIDDICT"]),
                                        max_num_iterations=self.GLOBALDICT["MODELDESIGN"]["MAX_NUM_ITERATIONS"])
         # print "msmt_per_node", self.naiveobj.msmt_per_node
-        posterior_map, true_map_ = self.naiveobj.get_empirical_est()
+        posterior_map, true_map_ = self.naiveobj.get_empirical_est(addnoise=self.GLOBALDICT["ADDNOISE"])
         # print "After naiveobj.get_empirical_est(): ", self.naiveobj.msmt_per_node
         map_residuals = self.loss(posterior_map, true_map_)
 

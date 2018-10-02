@@ -251,7 +251,9 @@ class Grid(object):
 
     def __init__(self,LAMBDA_1=1.0,
                  list_of_nodes_positions=None,
-                 engineeredtruemap=None, **SAMPLE_F):
+                 engineeredtruemap=None,
+                 addnoise=None,
+                 **SAMPLE_F):
 
         if list_of_nodes_positions is None:
             print "No node positions specified"
@@ -270,6 +272,7 @@ class Grid(object):
 
         self.engineeredtruemap = engineeredtruemap
         self.control_sequence = []
+        self.addnoise = addnoise
 
         for item in xrange(self.number_of_nodes):
             self.nodes[item].x_state, self.nodes[item].y_state = self.list_of_nodes_positions[item]
@@ -314,4 +317,9 @@ class Grid(object):
 
         self.control_sequence.append(node_j)
 
-        return msmt
+        if self.addnoise is not None:
+            noisymsmt = self.addnoise["func"](msmt, **self.addnoise["args"])
+            return noisymsmt
+        elif self.addnoise is None:
+            print "There is no noise process dictionary (qslam in Grid.measurenode)"
+            return msmt

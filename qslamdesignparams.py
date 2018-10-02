@@ -105,9 +105,10 @@ Created on Thu Apr 20 19:20:43 2017
 moduleauthor:: Riddhi Gupta <riddhi.sw@gmail.com>
 '''
 
-########################################### QUBIT SPATIAL ARRANGEMENT ##########
-
 import numpy as np
+from engineerednoise import EngineeredNoise
+
+########################################### QUBIT SPATIAL ARRANGEMENT ##########
 
 GRIDDICT = {"QUBIT_01" : (0.0, 0.0),
             "QUBIT_02" : (0.0, 1.0),
@@ -273,11 +274,17 @@ RISKPARAMS = {"savetopath": './',
               "loss_truncation":0.1
              }
 
+##################################################### ENGINEERED NOISE #########
+
+noiseprocess = EngineeredNoise()
+ADDNOISE = {"func": noiseprocess.add_noise, "args": {"prob_hit": 0.1, "noise_type" : "noiseless"}}
+
 ##################################################### GLOBAL MODEL ###############
 GLOBALDICT = {"MODELDESIGN": MODELDESIGN,
               "PRIORDICT" : PRIORDICT,
               "NOISEPARAMS": NOISEPARAMS,
               "GRIDDICT" : GRIDDICT,
               "RISKPARAMS" : RISKPARAMS,
-              "HYPERDICT": HYPERDICT
+              "HYPERDICT": HYPERDICT,
+              "ADDNOISE" : ADDNOISE
              }

@@ -147,7 +147,9 @@ class ParticleFilter(Grid):
         LAMBDA_1 = self.MODELDESIGN["LAMBDA_1"]
         SAMPLE_F = self.PRIORDICT["SAMPLE_F"]
 
+        ADDNOISE = self.GLOBALDICT["ADDNOISE"]
         self.QubitGrid = Grid(LAMBDA_1=LAMBDA_1,
+                              addnoise=ADDNOISE,
                               list_of_nodes_positions=posvals,
                               **SAMPLE_F)
 
