@@ -65,13 +65,62 @@ PATHDICT = {"pdir": './data',
             "fle": 'empty'}
 
 def path_to_file(PATHDICT, flag="q"):
-    'Returns path to file'
+    'Return path to file'
     pathtofile = os.path.join(PATHDICT["pdir"],
                               PATHDICT["fle"] + NPZFLAG[FLAG[flag]])
     return pathtofile
 
+def check_savefig(current_indices, controls=None):
+    'Return True if parameter regimes for plotting match controls'
+    if controls is None:
+        return False
+    for item in controls:
+        result = np.all(np.asarray(current_indices) == np.asarray(item))
+        if result:
+            return result
 
+def cm2inch(cm):
+    return cm / 2.54
+    
+    
+    
 # Metrics
+
+class DataCube(object):
+
+    def __init__(self, loops_dictionary):
+
+        for key in loops_dictionary.keys():
+            setattr(self, key, loops_dictionary[key])
+
+    def meta_loop_update(self, vardict, vardict_truth, idx_prevar, idx_msmt_var, idx_noise_var,
+                  flag='floor'):
+
+        if flag =='floor':
+            vardict_truth["OneStepdfloorarea"]  = self.meta_truth_floor_scan[idx_prevar]
+
+        if flag =='height':
+            vardict_truth["OneStepdheight"]["low"] = self.truth_step_scan [idx_prevar][0]
+            vardict_truth["OneStepdheight"]["high"] = self.truth_step_scan[idx_prevar][1]
+
+        vardict["MODELDESIGN"]["MAX_NUM_ITERATIONS"] = self.meta_max_iter_scan[idx_msmt_var]
+
+        vardict["ADDNOISE"]["args"]["noise_type"] = self.meta_noisevar_scan[idx_noise_var][0]
+        vardict["ADDNOISE"]["args"]["prob_hit"] = self.meta_noisevar_scan[idx_noise_var][1]
+
+        return vardict, vardict_truth
+
+    def inner_loop_update(self, vardict, idx_var, flag='weights'):
+
+        if flag == 'weights':
+            vardict["MODELDESIGN"]["LAMBDA_1"] = self.lambda_scan[idx_var][0]
+            vardict["MODELDESIGN"]["LAMBDA_2"] = self.lambda_scan[idx_var][1]
+
+        if flag == 'msmtinfo':
+            vardict["MODELDESIGN"]["MSMTS_PER_NODE"] = self.msmt_per_qubit_scan[idx_var]
+
+        return vardict
+
 
 class Metric(object):
 

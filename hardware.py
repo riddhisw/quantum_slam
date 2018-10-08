@@ -18,7 +18,7 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 import numpy as np
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
-
+from experimentaldata import RealDataGenerator
 
 ###############################################################################
 # CHIP STRUCTURE
@@ -271,6 +271,7 @@ class Grid(object):
         self.state_vector = np.zeros(self.number_of_nodes*len(PARTICLE_STATE))
 
         self.engineeredtruemap = engineeredtruemap
+        self.real_data = False
         self.control_sequence = []
         self.addnoise = addnoise
 
@@ -310,10 +311,15 @@ class Grid(object):
             single shot Ramsey experiment on a qubit.'''
 
         # ENGINEERED NOISE MSMT
-        qubit_phase = self.engineeredtruemap[node_j]
-        # TODO: Perturb randomly for a real noise field.
-        born_prob = Node.born_rule(qubit_phase)
-        msmt = np.random.binomial(1, born_prob)
+        if not self.real_data:
+            qubit_phase = self.engineeredtruemap[node_j]
+            # TODO: Perturb randomly for a real noise field.
+            born_prob = Node.born_rule(qubit_phase)
+            msmt = np.random.binomial(1, born_prob)
+
+        # REAL DATA FEED
+        if self.real_data:
+            msmt = RealDataGenerator.get_real_data(node_j)
 
         self.control_sequence.append(node_j)
 
