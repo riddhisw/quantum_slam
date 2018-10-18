@@ -603,10 +603,12 @@ class ParticleFilter(Grid):
         '''
         state_update = 0.
         new_alpha_particle_list = []
+        leaf_count_list = []
 
         # for estimating variange at node accross all Alphas.
         normaliser = (1./float(len(subtree_list)))
         uncertainity_at_j = 0.0
+
 
         for subtree in subtree_list:
 
@@ -653,6 +655,8 @@ class ParticleFilter(Grid):
                 # New Alphas Stored, control parameters updated
                 uncertainity_at_j += r_est_subtree_variance * normaliser # TODO: is this the correct normalisation?
                 new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
+            
+                leaf_count_list.append(leaf_count)
 
         self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = uncertainity_at_j
         
@@ -674,11 +678,11 @@ class ParticleFilter(Grid):
         # Proposed code
         #-----------------------------------------------------------------------
 
-        # # Store all leaf_counts_list:
+        # # Store all leaf_count_list:
         # new_alpha_particle_list = self.null_beta_layer(new_alpha_particle_list) # SEE IF THIS WORKS!
 
-        # marginalise_weights = leaf_counts_list / np.sum(leaf_counts_list)
-        # p_alpha_indices = resample_from_weights(marginalise_weights, self.MODELDESIGN["P_ALPHA"])
+        # marginalise_weights = leaf_count_list / np.sum(leaf_count_list)
+        # p_alpha_indices = ParticleFilter.resample_from_weights(marginalise_weights, self.MODELDESIGN["P_ALPHA"])
         # final_alpha_list = [new_alpha_particle_list[idx_] for idx_ in p_alpha_indices]
 
         # def null_beta_layer(self, list_of_alpha_particles):
@@ -690,26 +694,49 @@ class ParticleFilter(Grid):
 
 
         ########################################################################
-        print "Got here"
+        
         number_of_new_alphas = len(new_alpha_particle_list)
 
-        if  number_of_new_alphas < self.MODELDESIGN["P_ALPHA"]:
+        # print "these are the weights of Alpha", [alpha_idx.weight for alpha_idx in self.AlphaSet.particles]
+        # print "these are the weights of new_alpha_particle_list", [alpha_idx.weight for alpha_idx in new_alpha_particle_list]
+        # print "these are the leaf counts", leaf_count_list
 
-            alpha_sample_size = self.MODELDESIGN["P_ALPHA"] - number_of_new_alphas
-            alpha_sampling_vector = np.random.randint(low=0, high=number_of_new_alphas, size=alpha_sample_size) # # Approximation. Hard to justify. Revisit.  
-            extended_alpha_list  = new_alpha_particle_list + [new_alpha_particle_list[idx_] for idx_ in alpha_sampling_vector] 
-            self.null_beta_layer(extended_alpha_list)
+        marginalise_weights = leaf_count_list / np.sum(leaf_count_list)
+        p_alpha_indices = ParticleFilter.resample_from_weights(marginalise_weights, self.MODELDESIGN["P_ALPHA"])
+        final_alpha_list = [new_alpha_particle_list[idx_] for idx_ in p_alpha_indices]
+        
+        # print "Now, I'm going to test proposed code:"
+        # print "Here are the marginal weights for alphas", marginalise_weights
+        # print "Here are the resampled indicies for alphas", p_alpha_indices
+        # print "Here are # of proposed / resampled  alphas", len(final_alpha_list)
+        
+        # print "before null"
+        # print final_alpha_list[0].BetaAlphaSet_j
+        # # null_beta_layer() somehow works but I don't know why 
+        self.null_beta_layer(final_alpha_list)
+        # print "after null"
+        # print final_alpha_list[0].BetaAlphaSet_j
 
-            return extended_alpha_list
+        return final_alpha_list
 
-        print "before null"
-        print new_alpha_particle_list[0].BetaAlphaSet_j
-        # null_beta_layer() somehow works but I don't know why 
-        self.null_beta_layer(new_alpha_particle_list) 
-        print "after null"
-        print new_alpha_particle_list[0].BetaAlphaSet_j
+        # if  number_of_new_alphas < self.MODELDESIGN["P_ALPHA"]:
 
-        return new_alpha_particle_list
+        #     alpha_sample_size = self.MODELDESIGN["P_ALPHA"] - number_of_new_alphas
+        #     alpha_sampling_vector = np.random.randint(low=0, high=number_of_new_alphas, size=alpha_sample_size) # # Approximation. Hard to justify. Revisit.  
+        #     extended_alpha_list  = new_alpha_particle_list + [new_alpha_particle_list[idx_] for idx_ in alpha_sampling_vector] 
+        #     print "before null - extended", extended_alpha_list[0].BetaAlphaSet_j
+        #     self.null_beta_layer(extended_alpha_list)
+        #     print "after null - extended", extended_alpha_list[0].BetaAlphaSet_j
+        #     return extended_alpha_list
+
+        # print "before null"
+        # print new_alpha_particle_list[0].BetaAlphaSet_j
+        # # null_beta_layer() somehow works but I don't know why 
+        # self.null_beta_layer(new_alpha_particle_list) 
+        # print "after null"
+        # print new_alpha_particle_list[0].BetaAlphaSet_j
+
+        # return new_alpha_particle_list
 
     def null_beta_layer(self, list_of_alpha_particles):
         ''' Strips input list of Alpha particles of its individual Beta layers. Helpfer function to self.collapse_beta()'''
