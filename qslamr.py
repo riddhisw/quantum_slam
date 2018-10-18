@@ -716,7 +716,7 @@ class ParticleFilter(Grid):
         self.null_beta_layer(final_alpha_list)
         # print "after null"
         # print final_alpha_list[0].BetaAlphaSet_j
-
+        
         return final_alpha_list
 
         # if  number_of_new_alphas < self.MODELDESIGN["P_ALPHA"]:
