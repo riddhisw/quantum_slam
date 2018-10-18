@@ -651,23 +651,58 @@ class ParticleFilter(Grid):
                 # self.AlphaSet.particles[alpha_node].BetaAlphaSet_j = None
 
                 # New Alphas Stored, control parameters updated
-                uncertainity_at_j += r_est_subtree_variance * normaliser
+                uncertainity_at_j += r_est_subtree_variance * normaliser # TODO: is this the correct normalisation?
                 new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
 
         self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = uncertainity_at_j
+
+        ########################################################################
+        # Resampling is currently incorrect: bug fix options
+        #-----------------------------------------------------------------------
+
+        # BUGFIX: Currently, need to somehow resample the weights for alphas such that they reflect
+        # the size of the sub-tree below them before collapse.
+
+        # APPROX ERROR: Also need to conserve alpha particle number, and not sure
+        # if my current approximation is well justified.
+
+        # PROPOSAL: Get a list of the leaf count. Reset the weights on alpha particles according to the leaf count
+        # Resample alpha particles again with replacement unitl particle number is conserved.
+
+        ########################################################################
+        # Proposed code
+        #-----------------------------------------------------------------------
+
+        # # Store all leaf_counts_list:
+        # new_alpha_particle_list = self.null_beta_layer(new_alpha_particle_list) # SEE IF THIS WORKS!
+
+        # marginalise_weights = leaf_counts_list / np.sum(leaf_counts_list)
+        # p_alpha_indices = resample_from_weights(marginalise_weights, self.MODELDESIGN["P_ALPHA"])
+        # final_alpha_list = [new_alpha_particle_list[idx_] for idx_ in p_alpha_indices]
+
+        # def null_beta_layer(self, list_of_alpha_particles):
+        #     ''' Strips input list of Alpha particles of its individual Beta layers. Helpfer function to self.collapse_beta()'''
+
+        #     for alpha_idx in range(len(list_of_alpha_particles)):
+        #         list_of_alpha_particles[alpha_idx].BetaAlphaSet_j = None
+        #     return list_of_alpha_particles
+
+
+        ########################################################################
+
 
         number_of_new_alphas = len(new_alpha_particle_list)
 
         if  number_of_new_alphas < self.MODELDESIGN["P_ALPHA"]:
 
             alpha_sample_size = self.MODELDESIGN["P_ALPHA"] - number_of_new_alphas
-            alpha_sampling_vector = np.random.randint(low=0, high=number_of_new_alphas, size=alpha_sample_size)
+            alpha_sampling_vector = np.random.randint(low=0, high=number_of_new_alphas, size=alpha_sample_size) # # Approximation. Hard to justify. Revisit.  
             extended_alpha_list  = new_alpha_particle_list + [new_alpha_particle_list[idx_] for idx_ in alpha_sampling_vector] 
             self.null_beta_layer(extended_alpha_list)
 
             return extended_alpha_list
 
-        self.null_beta_layer(new_alpha_particle_list)
+        self.null_beta_layer(new_alpha_particle_list) # TODO: Bugfix: this is doing nothing unless its accessing the name space somehow!!!!
 
         return new_alpha_particle_list
 
