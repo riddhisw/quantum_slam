@@ -655,6 +655,7 @@ class ParticleFilter(Grid):
                 new_alpha_particle_list.append(self.AlphaSet.particles[alpha_node])
 
         self.QubitGrid.nodes[self.AlphaSet.particles[alpha_node].node_j].r_state_variance = uncertainity_at_j
+        
 
         ########################################################################
         # Resampling is currently incorrect: bug fix options
@@ -689,8 +690,7 @@ class ParticleFilter(Grid):
 
 
         ########################################################################
-
-
+        print "Got here"
         number_of_new_alphas = len(new_alpha_particle_list)
 
         if  number_of_new_alphas < self.MODELDESIGN["P_ALPHA"]:
@@ -702,7 +702,12 @@ class ParticleFilter(Grid):
 
             return extended_alpha_list
 
-        self.null_beta_layer(new_alpha_particle_list) # TODO: Bugfix: this is doing nothing unless its accessing the name space somehow!!!!
+        print "before null"
+        print new_alpha_particle_list[0].BetaAlphaSet_j
+        # null_beta_layer() somehow works but I don't know why 
+        self.null_beta_layer(new_alpha_particle_list) 
+        print "after null"
+        print new_alpha_particle_list[0].BetaAlphaSet_j
 
         return new_alpha_particle_list
 
