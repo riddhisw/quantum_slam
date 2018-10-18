@@ -11,7 +11,8 @@ import time
 from pathlib import Path
 import pandas as pd
 # import zipfile
-from Bayes2class import maximum_likelihood_state_estimation
+# RG 
+# from Bayes2class import maximum_likelihood_state_estimation
 
 def runAnalysisN (N, prefix, year, date, datafile, reps, startrep, img_shape, div, clf, points=None):
       
@@ -19,6 +20,7 @@ def runAnalysisN (N, prefix, year, date, datafile, reps, startrep, img_shape, di
     #file = pd.read_csv(zf.open(zipfile.ZipFile.namelist(zf)[0]), sep="\t", header=None)
     zf = Path(prefix + year+ '/' + date + '/' + date +'-'+datafile +'/cimg' + date + '-' + datafile + '.dat')
     file = pd.read_csv(str(zf), sep="\t", header=None)
+    
     dpts = file.values.shape[0]
     repetitions = int(file.values.shape[1] / img_shape[0] / img_shape[1])
     print ('read ' + str(dpts) + ' data points with ' + str(repetitions) + ' repetitions (' + str(points) + ' points, ' + str(reps) +  ' repetitions requested)')
@@ -47,17 +49,20 @@ def runAnalysisN (N, prefix, year, date, datafile, reps, startrep, img_shape, di
         ion_bright.append(clf[ion].predict_proba(data)[:,:].reshape(dpts,repetitions, 2))
    
     # RG
-    np.savez("ion_bright", ion_bright=ion_bright)
-    
-    n_points = len(points)
-    pb = np.zeros((N, n_points)) # probabilities bright per ion
-    pb_err = np.zeros((N, 2, n_points))# probabilities bright per ion
-    for ion in range(0,N):
-        # Classify dark/bright
-        tic = time.clock()
-        print('states classified: ' + str(time.clock()-tic) + ' seconds')
-        print('starting Bayesian analysis')
-        (pbright, pbright_err)  = maximum_likelihood_state_estimation(ion_bright[ion][:, startrep:])
-        pb[ion] = pbright
-        pb_err[ion] = pbright_err
-    return [pb, pb_err]
+    filename = date + '-' + datafile
+    np.savez(prefix + '/' + filename + 'ion_bright_matrix', ion_bright=ion_bright)
+
+# # Mute Bayes2class.maximum_likelihood_state_estimation() as theory unclear.
+#    
+#     n_points = len(points)
+#     pb = np.zeros((N, n_points)) # probabilities bright per ion
+#     pb_err = np.zeros((N, 2, n_points))# probabilities bright per ion
+#     for ion in range(0,N):
+#         # Classify dark/bright
+#         tic = time.clock()
+#         print('states classified: ' + str(time.clock()-tic) + ' seconds')
+#         print('starting Bayesian analysis')
+#         (pbright, pbright_err)  = maximum_likelihood_state_estimation(ion_bright[ion][:, startrep:])
+#         pb[ion] = pbright
+#         pb_err[ion] = pbright_err
+#     return [pb, pb_err]
