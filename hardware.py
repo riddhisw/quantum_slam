@@ -18,7 +18,7 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 import numpy as np
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
-from experimentaldata import RealDataGenerator
+# from experimentaldata import RealDataGenerator
 
 ###############################################################################
 # CHIP STRUCTURE

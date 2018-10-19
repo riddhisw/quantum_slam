@@ -489,8 +489,8 @@ class ParticleFilter(Grid):
         '''Return a uniform distribution following a singular or invalid
         numerical posterior distribution'''
 
-        dims = float(self.MODELDESIGN["P_ALPHA"]) * float(self.MODELDESIGN["P_BETA"])
-        normalised_posterior_weights = (1.0 / dims)* np.ones(dims)
+        dimension = float(self.MODELDESIGN["P_ALPHA"]) * float(self.MODELDESIGN["P_BETA"])
+        normalised_posterior_weights = (1.0 / dimension)* np.ones(dimension)
         return normalised_posterior_weights
 
 
