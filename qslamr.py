@@ -490,7 +490,7 @@ class ParticleFilter(Grid):
         numerical posterior distribution'''
 
         dimension = float(self.MODELDESIGN["P_ALPHA"]) * float(self.MODELDESIGN["P_BETA"])
-        normalised_posterior_weights = (1.0 / dimension)* np.ones(dimension)
+        normalised_posterior_weights = (1.0 / dimension)* np.ones(int(dimension)) # Python language dependent error
         return normalised_posterior_weights
 
 
