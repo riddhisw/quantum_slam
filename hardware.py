@@ -18,7 +18,7 @@ Created on Thu Apr 20 19:20:43 2017
 '''
 import numpy as np
 PARTICLE_STATE = ["x_state", "y_state", "f_state", "r_state"]
-# from experimentaldata import RealDataGenerator
+from experimentaldata import RealData
 
 ###############################################################################
 # CHIP STRUCTURE
@@ -253,6 +253,7 @@ class Grid(object):
                  list_of_nodes_positions=None,
                  engineeredtruemap=None,
                  addnoise=None,
+                 real_data=False,
                  **SAMPLE_F):
 
         if list_of_nodes_positions is None:
@@ -271,7 +272,11 @@ class Grid(object):
         self.state_vector = np.zeros(self.number_of_nodes*len(PARTICLE_STATE))
 
         self.engineeredtruemap = engineeredtruemap
-        self.real_data = False
+        self.real_data = real_data
+
+        if self.real_data:
+            self.RealDataGenerator = RealData() 
+            # print "Expt datafile:", self.RealDataGenerator.ion_bright_path2file
         self.control_sequence = []
         self.addnoise = addnoise
 
@@ -310,22 +315,23 @@ class Grid(object):
         '''Return a 0 or 1 physical measurement for performing a
             single shot Ramsey experiment on a qubit.'''
 
+        # REAL DATA FEED 
+        if self.real_data:
+            msmt = self.RealDataGenerator.get_real_data(node_j)
+            self.control_sequence.append(node_j)
+            return msmt
+
         # ENGINEERED NOISE MSMT
         if not self.real_data:
             qubit_phase = self.engineeredtruemap[node_j]
-            # TODO: Perturb randomly for a real noise field.
             born_prob = Node.born_rule(qubit_phase)
             msmt = np.random.binomial(1, born_prob)
-
-        # REAL DATA FEED
-        if self.real_data:
-            msmt = RealDataGenerator.get_real_data(node_j)
-
-        self.control_sequence.append(node_j)
+            self.control_sequence.append(node_j)
 
         if self.addnoise is not None:
             noisymsmt = self.addnoise["func"](msmt, **self.addnoise["args"])
             return noisymsmt
+
         elif self.addnoise is None:
             print "There is no noise process dictionary (qslam in Grid.measurenode)"
             return msmt

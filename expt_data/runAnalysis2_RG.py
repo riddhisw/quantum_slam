@@ -10,6 +10,7 @@ import numpy as np
 import time
 from pathlib import Path
 import pandas as pd
+
 # import zipfile
 # RG 
 # from Bayes2class import maximum_likelihood_state_estimation
@@ -31,6 +32,8 @@ def runAnalysisN (N, prefix, year, date, datafile, reps, startrep, img_shape, di
     
     #%% Classify data
     ion_bright = []
+    labels_bright = []
+    
     tic = time.clock()
     for ion in range(0,N):  
         if (ion == 0):
@@ -45,12 +48,13 @@ def runAnalysisN (N, prefix, year, date, datafile, reps, startrep, img_shape, di
             img_width = int(div[ion])-int(div[ion-1])
             print('image width '+str(img_width)+' pixels from ' + str(int(div[ion-1])+1) +' to ' + str(int(div[ion])))
             data = file.values.reshape(dpts,reps,img_shape[0],img_shape[1])[:,:,:,int(div[ion-1])+1:int(div[ion])+1].reshape(dpts*reps,img_shape[0]*img_width)     
-    
-        ion_bright.append(clf[ion].predict_proba(data)[:,:].reshape(dpts,repetitions, 2))
+
+        ion_bright.append(clf[ion].predict_proba(data)[:,:].reshape(dpts,repetitions, 2)) # RG: predict_proba returns [n_samples, n_classes] # don't use class probabilities
+        labels_bright.append(clf[ion].predict(data)[:].reshape(dpts, repetitions, 1)) # RG: predict returns [n_samples] # maybe just use labels
    
     # RG
     filename = date + '-' + datafile
-    np.savez(prefix + '/' + filename + 'ion_bright_matrix', ion_bright=ion_bright)
+    np.savez(prefix + '/' + filename + 'ion_bright_matrix', ion_bright=ion_bright, labels_bright=labels_bright)
 
 # # Mute Bayes2class.maximum_likelihood_state_estimation() as theory unclear.
 #    

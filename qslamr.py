@@ -131,7 +131,7 @@ class ParticleFilter(Grid):
 
     '''
 
-    def __init__(self, GLOBALDICT):
+    def __init__(self, GLOBALDICT, real_data=False):
 
         self.GLOBALDICT = GLOBALDICT
         self.MODELDESIGN = self.GLOBALDICT["MODELDESIGN"]
@@ -150,6 +150,7 @@ class ParticleFilter(Grid):
         ADDNOISE = self.GLOBALDICT["ADDNOISE"]
         self.QubitGrid = Grid(LAMBDA_1=LAMBDA_1,
                               addnoise=ADDNOISE,
+                              real_data=real_data, # TODO: update docstrings
                               list_of_nodes_positions=posvals,
                               **SAMPLE_F)
 
