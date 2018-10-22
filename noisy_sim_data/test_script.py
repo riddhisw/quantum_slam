@@ -31,6 +31,12 @@ prefix_list = ['NSL_tfloor', 'NSL_theight']
 
 prefix = prefix_list[idx_prefix]
 
+if idx_prefix == 0:
+    TRUTHFLAG = 'floor'
+
+if idx_prefix == 1:
+    TRUTHFLAG = 'height'
+
 ########################
 # Truth Parameters
 ########################
@@ -135,7 +141,7 @@ for idx_msmt_var in range(len(ParamUpdater.meta_max_iter_scan)):
         vardict_truth = copy.deepcopy(TRUTHKWARGS)
         vardict, vardict_truth = ParamUpdater.meta_loop_update(vardict, vardict_truth,
                                                                idx_prevar, idx_msmt_var, idx_noise_var,
-                                                               flag='floor')
+                                                               flag=TRUTHFLAG)
         
         vardict_0 = ParamUpdater.inner_loop_update(copy.deepcopy(vardict), idx_var, flag='weights')
         vardict_1 = ParamUpdater.inner_loop_update(copy.deepcopy(vardict), idx_var, flag='msmtinfo')
