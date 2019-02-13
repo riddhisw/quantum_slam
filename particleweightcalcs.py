@@ -218,8 +218,13 @@ class ParticleLikelihoods(object):
         new_phase = l_args["new_phase"]
         old_phase = l_args["old_phase"]
         prefactor = 1.0 / np.sqrt(2.0 * np.pi * variance)
+        
+        trunc_arg1 = (np.pi - mean) / np.sqrt(variance * 2.0) 
+        trunc_arg2 = (np.pi + mean) / np.sqrt(variance * 2.0)
+        truncation_constant = 0.5 * (erf(trunc_arg1) + erf(trunc_arg2))
+        
         argument = -1.0 * ((new_phase - old_phase)- mean)**2 / (2.0 * variance)
-        result = prefactor * np.exp(argument)
+        result = (1.0 / truncation_constant) * prefactor * np.exp(argument)
 
         return result
 
