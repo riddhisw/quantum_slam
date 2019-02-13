@@ -3,11 +3,11 @@
 \usepackage{placeins}
 \usepackage{hyperref}
 \usepackage{color}
-\usepackage[nameinlink,poorman]{cleveref}
 \usepackage{longtable}
 \usepackage{amsthm}
 \usepackage{algorithm}
 \usepackage{algpseudocode} 
+\usepackage[nameinlink,poorman]{cleveref}
 
 % Make a list of notation / nomenclature
 \usepackage{nomencl}
@@ -17,6 +17,30 @@
 % #############################################################################
 %  GLOBAL PACKAGE OPTIONS AND STYLE 
 % #############################################################################
+
+% #############################################################################
+% newtheorem and amsmath options 
+% #############################################################################
+%Define format for defintions
+\newtheorem{theorem}{Theorem}%[section]
+% set counters to be the same as theorem
+\newtheorem{defn}[theorem]{Definition}
+\newtheorem{azm}[theorem]{Assumption}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+% Define paragraph spacing and line spacing
+% \setlength{\parindent}{4em}
+\setlength{\parskip}{20em} 
+% \renewcommand{\baselinestretch}{1.5}
+
+% refer to properties of definition
+
+\usepackage{enumitem}
+\newlist{thmprop}{enumerate}{2}
+\setlist[thmprop]{label={\normalfont(\roman*)},ref=(\roman*)}
 
 % #############################################################################
 % cleverref options
@@ -32,32 +56,37 @@
 
 
 \crefname{theorem}{Theorem}{Theorems}
+\crefname{defn}{Definiton}{Definitions}
+\crefname{azm}{Assumption}{Assumptions}
+\crefname{corollary}{Corollary}{Corollaries}
 \crefname{lemma}{Lemma}{Lemmas}
-
-% #############################################################################
-% newtheorem and amsmath options 
-% #############################################################################
-%Define format for defintions
-\newtheorem{defn}{Definition}%[section]
-\newtheorem{azm}{Assumption}%[section]
-\newtheorem{theorem}{Theorem}%[section]
-\newtheorem{corollary}{Corollary}[theorem]
-%\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{lemma}{Lemma}
-
-% Define paragraph spacing and line spacing
-% \setlength{\parindent}{4em}
-\setlength{\parskip}{20em} 
-% \renewcommand{\baselinestretch}{1.5}
+\crefname{thmprop}{property}{properties}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{remark}{Remark}{Remarks}
 
 % #############################################################################
 %  GLOBAL PAPER NOTATION
 % #############################################################################
 
+
 % #############################################################################
 %  New notation (for this paper)
 % #############################################################################
 
+% Axiomatic probability and non linear filtering notation
+\newcommand{\ex}[1]{\mathbb{E}[#1]} %mathmode only - expectation values
+\newcommand{\samplespace}[1]{\Omega_{#1}}  %mathmode only - sample space Omega 
+\newcommand{\family}[1]{\mathcal{F}_{#1}}  %mathmode only - family of events 
+\newcommand{\measure}[2]{\mathbb{P}_{#1}{[#2]}}  %mathmode only - measure P
+\newcommand{\ofieldgen}[1]{\sigma(#1)}  %mathmode only - sigma-field generated #1
+\newcommand{\ofieldA}[0]{\mathcal{A}}
+\newcommand{\pr}[0]{\mathrm{Pr}}
+\newcommand{\erf}[0]{\mathrm{erf}}
+\newcommand{\ofield}[0]{$\sigma$-field} % text mode
+
+
+\iffalse
+% TODO DELETE THIS
 % Notation for all probability distributions
 \newcommand{\prob}[2]{\mathcal{P}_{#1} ( #2 )} % true distribution
 \newcommand{\probest}[2]{\hat{\mathcal{P}}_{#1} (#2)}  % sample distribution
@@ -99,12 +128,10 @@
 \newcommand{\pj}[1]{\ket{#1}\bra{#1}} %mathmode only - projection operator
 \newcommand{\pjs}[2]{\bra{#1}#2\rangle} %mathmoe only - state projection
 
-% Misc functions
-\newcommand{\erf}[0]{\text{erf}}
 
 % Define commmon linear operators
 \newcommand{\dd}[0]{(t)} %mathmode only - time dependence
 \newcommand{\dr}[1]{\frac{d #1}{dt}} %mathmode only - time derivative 
-\newcommand{\ex}[1]{\mathbb{E}[#1]} %mathmode only - expectation values
 \newcommand{\norm}[1]{||#1||} %mathmode only - norm
 
+\fi
