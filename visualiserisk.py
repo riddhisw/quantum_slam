@@ -18,8 +18,8 @@ import matplotlib
 import sys
 import os
 
-fsize=8
-Fsize=8
+fsize=12#8
+Fsize=12#8
 # Set global parameters
 matplotlib.rcParams['font.size'] = fsize # global
 matplotlib.rcParams['font.family'] = 'sans-serif'
@@ -255,9 +255,9 @@ class qPlotter(object):
 
     def show_map(self, ax, dataobj, viewtype, pickone=None, linear=False):
         
-        if viewtype == 'path':
-            print "Skip control path"
-            return ax
+        # if viewtype == 'path':
+        #     print "Skip control path"
+        #     return ax
         
         statedata = self.get_single_run(dataobj, viewtype, pickone)
         
@@ -275,7 +275,9 @@ class qPlotter(object):
         
         if linear is True:
                 mapdims = statedata.shape[0]
-                mapdata = statedata.reshape(1, mapdims)
+                mapdata = np.zeros((3, mapdims))
+                for idx in range(3): # make imshow fatter
+                    mapdata[idx, : ] = statedata
                 cax = ax.imshow(mapdata, **self.HEATMAP)
         
         return ax, cax

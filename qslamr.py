@@ -935,7 +935,7 @@ class ParticleFilter(Grid):
         -------
         '''
         sufficient_sample = False
-        num_of_samples = pset_alpha
+        num_of_samples = pset_alpha # change to: num_of_samples = pset_alpha * pset_beta # no don't change it! convergence proof simplier if total trials doesn't change
         total_particles = len(posterior_weights)
 
         resampled_indices = ParticleFilter.resample_from_weights(posterior_weights,
