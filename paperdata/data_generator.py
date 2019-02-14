@@ -42,7 +42,7 @@ TRUTHKWARGS["OneStepdfloorarea"] = FLOOR_RATIO
 ########################
 
 savetopath = '/scratch/QCL_KF/qslamdatapaper/' # on Artemis
-# savetopath = './data/' # local
+savetopath = './data/' # local
 
 ########################
 # Set true field
@@ -121,8 +121,8 @@ GLOBALDICT["MODELDESIGN"]["LAMBDA_2"] = change_LAMBDA_2
 idx_prevar = 0 
 # Fix truth configurations
 meta_truth_floor_scan = [FLOOR_RATIO] # [0.2, 0.4, 0.6, 0.8, 1.0]
-lowscan = np.asarray(BARRIER_FLOOR) # np.asarray([0.2]*5)*np.pi
-highscan = np.asarray(BARRIER_HEIGHT) # np.asarray([0.2, 0.4, 0.6, 0.8, 1.0])*np.pi
+lowscan = [BARRIER_FLOOR] # np.asarray([0.2]*5)*np.pi
+highscan = [BARRIER_HEIGHT] # np.asarray([0.2, 0.4, 0.6, 0.8, 1.0])*np.pi
 truth_step_scan = zip(lowscan, highscan)
 
 
