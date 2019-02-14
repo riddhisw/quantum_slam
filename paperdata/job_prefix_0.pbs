@@ -1,0 +1,18 @@
+#PBS -P QCL_KF
+#PBS -N job_prefix_0
+#PBS -J 1-100
+#PBS -M riddhi.sw@gmail.com
+#PBS -m abe
+#PBS -l select=1:ncpus=1:mem=2GB
+#PBS -l walltime=16:00:00 
+#PBS -q defaultQ
+# #PBS -j oe
+
+cd $PBS_O_WORKDIR/
+
+prefix=0
+
+module load python
+
+python ./data_generator.py ${prefix} ${PBS_ARRAY_INDEX}
+
