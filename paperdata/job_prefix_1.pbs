@@ -1,6 +1,6 @@
 #PBS -P QCL_KF
 #PBS -N job_prefix_1
-#PBS -J 1-100
+#PBS -J 1-250
 #PBS -M riddhi.sw@gmail.com
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mem=2GB

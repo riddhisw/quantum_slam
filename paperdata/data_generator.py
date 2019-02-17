@@ -144,7 +144,7 @@ msmt_per_qubit_scan = [1] # [1, 2, 4, 5, 6, 8, 10, 15, 20, 25, 50]
 
 meta_max_iter_scan = [ 5, 10, 15, 20, 25, 50, 75, 100, 125, 250]
 
-lambda_databse = np.load('./lambda_pairs.npz')
+lambda_databse = np.load('./lambda_pairs_2.npz')
 lambda1 = list(lambda_databse['lambda_1']) # [0.99, 0.956, 0.922, 0.888, 0.854, 0.820, 0.786, 0.752, 0.718, 0.684, 0.65]
 lambda2 = list(lambda_databse['lambda_2']) # [0.977, 0.9752, 0.9734, 0.9716, 0.9698, 0.968, 0.9662, 0.9644, 0.9626, 0.9608, 0.959]
 lambda_scan = zip(lambda1, lambda2)
