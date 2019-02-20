@@ -18,8 +18,8 @@ import matplotlib
 import sys
 import os
 
-fsize=12#8
-Fsize=12#8
+fsize=8
+Fsize=8
 # Set global parameters
 matplotlib.rcParams['font.size'] = fsize # global
 matplotlib.rcParams['font.family'] = 'sans-serif'
@@ -32,8 +32,8 @@ matplotlib.rcParams['xtick.major.width'] = 0.5
 matplotlib.rcParams['ytick.major.width'] = 0.5
 matplotlib.rcParams['xtick.labelsize']= fsize
 matplotlib.rcParams['ytick.labelsize'] = fsize
-matplotlib.rcParams['xtick.minor.visible'] = False
-matplotlib.rcParams['ytick.minor.visible'] = False
+# matplotlib.rcParams['xtick.minor.visible'] = False # need to show mior grid as white outline in maps 
+# matplotlib.rcParams['ytick.minor.visible'] = False
 matplotlib.rcParams['xtick.direction'] = 'in'
 matplotlib.rcParams['ytick.direction'] = 'in'
 
@@ -41,10 +41,15 @@ from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
+from matplotlib import cm
+import matplotlib.ticker as plticker
+from matplotlib.colors import ListedColormap
 Path = mpath.Path
 
 
 # DATA HANDLING
+
+GRIDLW = 0.5
 
 DATAVIEWKEYS = {"truth" : "macro_true_fstate",
                 "pred_f" : "macro_predictions",
@@ -195,14 +200,32 @@ class Metric(object):
         return deviation # ssim 
 
 
-# CONTROL PATH PLOTTER
+# MAPS AND CONTROL PATH PLOTTER
 
-PKWG = {"pc": 'w', # path base color
-        "palpha": 0.25, # path color alpha value
-        "pss": 10, # path start / stop size 
-        "ac": 'w', # arrow base color
-        "aalpha": 0.3, # arrow color alpha value
-        "adxdy": 0.1, # arrow dx and dy as ratio of path segment
+
+existingmap = cm.get_cmap('BuPu', 256)
+newcolors = existingmap(np.linspace(0.2, 0.8, 256))
+newcmap = ListedColormap(newcolors)
+
+# existingmap = cm.get_cmap('bone', 256)
+# newcolors = existingmap(np.linspace(0.4, 0.8, 256))
+# newcmap = ListedColormap(newcolors)
+
+# N = 256
+# vals = np.ones((N, 4)) #(47, 79, 79)
+# vals[:, 0] = np.linspace(70./256, 220./256, N)
+# vals[:, 1] = np.linspace(130./256, 220./256, N)
+# vals[:, 2] = np.linspace(180./256, 220./256, N)
+# newcmap = ListedColormap(vals)
+
+
+
+PKWG = {"pc": 'k',#'w', # path base color
+        "palpha": 1., # path color alpha value
+        "pss": 1.5, # path start / stop size 
+        "ac": 'k', # arrow base color
+        "aalpha": 1., # arrow color alpha value
+        "adxdy": 0.05, # arrow dx and dy as ratio of path segment
         "alw": 1.0, # arrow line width
         "ahw": 0.05, # arrow head width
         }
@@ -210,7 +233,7 @@ PKWG = {"pc": 'w', # path base color
 
 HEATMAP = {"vmin" : 0.0,
             "vmax" : np.pi,
-            "cmap" : 'viridis',
+            "cmap" : newcmap,# 'pink', 'bone',#'viridis',
             "origin": 'lower'
             }
 
@@ -275,19 +298,57 @@ class qPlotter(object):
         
         if linear is True:
                 mapdims = statedata.shape[0]
-                mapdata = np.zeros((3, mapdims))
-                for idx in range(3): # make imshow fatter
+                mapdata = np.zeros((1, mapdims))
+                for idx in range(1): # make imshow fatter # undone - do with aspect ratio.
                     mapdata[idx, : ] = statedata
                 cax = ax.imshow(mapdata, **self.HEATMAP)
+        
+        # Show all ticks...
+        ax.set_xticks(np.arange(mapdata.shape[1]), minor=True)
+        ax.set_yticks(np.arange(mapdata.shape[0]), minor=True)
+        
+        # Get rid of bounding box 
+        # for edge, spine in ax.spines.items():
+        #    spine.set_visible(False)
+        
+        # Make a grid and put labels on the center
+        axis_list = [ax.yaxis, ax.xaxis]
+        for idx_axis in range(2):
+            
+            labels = range(1, mapdata.shape[idx_axis] + 1, 1)
+            locs = np.arange(len(labels))
+            
+            axis = axis_list[idx_axis]
+            axis.set_ticks(locs + 0.5, minor=True)
+            
+            if linear == True:
+                locs = locs[4::5]
+                labels = labels[4::5]
+                
+            axis.set(ticks=locs, ticklabels=labels)
+        
+        # Make the grid white
+        ax.grid(which="minor", color="w", linestyle='-', linewidth=GRIDLW)
+        ax.tick_params(axis='both', which='both', color='w') # make major axis ticks white
+        
+        # Turn off ticks in linear plots
+        # if linear is True:
+            # ax.tick_params(axis='both', which='both', colors='None')
         
         return ax, cax
 
 
-    def show_control_path(self, ax, dataobj, GRIDDICT, viewtype="path",  pickone=None):
+    def show_control_path(self, ax, dataobj, GRIDDICT, viewtype="path", linear=False, pickone=None):
         
         controlpath = self.get_single_run(dataobj, viewtype, pickone)
         
         points = self.get_control_path(controlpath, GRIDDICT) 
+        
+        # if linear is True:
+        #     
+        #     # plot 1D path as expanded verticle steps in y axis
+        #     points = [(points[idx][0], idx*-1.0) for idx in np.arange(len(points))]
+        #     
         
         codes = [Path.LINETO] * len(points)
         codes[0] = Path.MOVETO
