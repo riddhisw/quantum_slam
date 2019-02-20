@@ -329,7 +329,8 @@ class qPlotter(object):
         
         # Make the grid white
         ax.grid(which="minor", color="w", linestyle='-', linewidth=GRIDLW)
-        ax.tick_params(axis='both', which='both', color='w') # make major axis ticks white
+        ax.tick_params(axis='both', which='both', color='w') 
+        ax.tick_params(axis='both', which='major', color='k', direction='out') 
         
         # Turn off ticks in linear plots
         # if linear is True:
@@ -344,11 +345,10 @@ class qPlotter(object):
         
         points = self.get_control_path(controlpath, GRIDDICT) 
         
-        # if linear is True:
-        #     
-        #     # plot 1D path as expanded verticle steps in y axis
-        #     points = [(points[idx][0], idx*-1.0) for idx in np.arange(len(points))]
-        #     
+        if linear is True:
+            
+            # plot 1D path as expanded verticle steps in y axis
+            points = [(points[idx][0], idx*-1.0) for idx in np.arange(len(points))]    
         
         codes = [Path.LINETO] * len(points)
         codes[0] = Path.MOVETO
