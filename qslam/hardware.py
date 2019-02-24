@@ -252,8 +252,8 @@ class Grid(object):
     def __init__(self,LAMBDA_1=1.0,
                  list_of_nodes_positions=None,
                  engineeredtruemap=None,
-                 addnoise=None,
-                 real_data=False,
+                 addnoise=None, 
+                 real_data=False, real_data_key=None,
                  **SAMPLE_F):
 
         if list_of_nodes_positions is None:
@@ -275,8 +275,8 @@ class Grid(object):
         self.real_data = real_data
 
         if self.real_data:
-            self.RealDataGenerator = RealData() 
-            # print "Expt datafile:", self.RealDataGenerator.ion_bright_path2file
+            self.RealDataGenerator = RealData(real_data_key) 
+            
         self.control_sequence = []
         self.addnoise = addnoise
 

@@ -8,15 +8,16 @@ from hardware import Node
 
 class EmpiricalRisk(object):
 
-    def __init__(self, GLOBALDICT):
+    def __init__(self, GLOBALDICT, data_key):
 
         self.GLOBALDICT = GLOBALDICT
+        self.data_key = data_key
 
     def qslam_trial(self, measurements_controls_=None,
                          autocontrol_="ON",
                          var_thres_=1.0 ):
         
-        qslamobj = qs.ParticleFilter(copy.deepcopy(self.GLOBALDICT), real_data=True)
+        qslamobj = qs.ParticleFilter(copy.deepcopy(self.GLOBALDICT), real_data=True, real_data_key=self.data_key)
         qslamobj.qslamr(max_num_iterations=self.GLOBALDICT["MODELDESIGN"]["MAX_NUM_ITERATIONS"],
                         measurements_controls=measurements_controls_,
                         autocontrol=autocontrol_,
@@ -30,7 +31,7 @@ class EmpiricalRisk(object):
 
     def naive_trial(self):
 
-        RealDataObject = RealData()
+        RealDataObject = RealData(self.data_key)
 
         naiveobj = NaiveEstimatorExpt(RealDataObject,
                                         msmt_per_node=self.GLOBALDICT["MODELDESIGN"]["MSMTS_PER_NODE"],
