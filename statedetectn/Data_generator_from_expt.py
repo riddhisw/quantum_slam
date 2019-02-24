@@ -2,22 +2,26 @@ import sys
 import os
 import copy
 import traceback
+import numpy as np
 
 ########################
 # Find qslam modules
 ########################
-sys.path.append('../')
+sys.path.append('../qslam')
 
 from qslamdesignparams import GLOBALDICT
 from exptrisk import EmpiricalRisk
 from visualiserisk import DataCube, cm2inch
+from experimentaldata import DataKeys
 
 ########################
-# Taking in bash parameters
+# Taking in bash parameters /
 ########################
-num_qubits = int(sys.argv[1]) # number of qubits in ion trap
-idx_var = int(sys.argv[2]) - 1 # lambda scan (100 options). Array index starts at 1 so subtract 1
-datakey = int(sys.argv[3])
+datakey = int(sys.argv[1]) # data key
+num_qubits = DataKeys[str(datakey)]['parameters']['N']
+    
+
+
 
 ########################
 # Save to path 

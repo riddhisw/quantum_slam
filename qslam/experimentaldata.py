@@ -108,3 +108,11 @@ class RealData(object):
         elif total_samples_left == 1:
             print("No more expt measurements avail at node:", node_j)
             raise RuntimeError
+            
+            
+    def get_empirical_mean(self):
+        ''' Return the empirical mean of msmt data'''
+        start = int(self.choose_expt * self.expt_repetitions)
+        stop = int(start + self.expt_repetitions)
+        empirical_p_mean = np.mean(self.binary_data[:, start :  stop], axis=1)
+        return empirical_p_mean
