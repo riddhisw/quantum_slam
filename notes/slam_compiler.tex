@@ -1,17 +1,19 @@
 \documentclass[pra,reprint]{revtex4-1} %reprint
 \input{./preamble}
-\graphicspath{ {./figs/}} 
+\graphicspath{ {./figs/}{../paperfigs/}} 
 
 \begin{document}
-
-%\input{./outline_2.tex} % Short and Long Paper Outlines
+\input{frontmatter.tex}
+\input{intro_shortpaper.tex}
+% \input{./outline_2.tex} % Short and Long Paper Outlines
 \input{./main_3.tex} % Short paper main text
+\input{./results}
 
 \clearpage
 \appendix
 
-\begin{widetext}
-\input{./appendix_2.tex} % Long paper appendix
+% \begin{widetext}
+%\input{./appendix_2.tex} % Long paper appendix
 % \input{nomenclature.tex}
 % \end{widetext} % inside appendix_2
 
