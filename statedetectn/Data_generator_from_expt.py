@@ -134,7 +134,7 @@ for idx_l in range(len(ParamUpdater.lambda_scan)):
     meta_ssim_pairs_1.append([ssim_qslam, ssim_naive])
     meta_empr_pairs_1.append([err_qslam, err_naive])
     
-    np.savez('qslam_exptdata_'+str(datakey), 
+    np.savez('qslam_exptdata_reweight'+str(datakey), 
              ParamUpdater=ParamUpdater, 
              meta_ssim_pairs=meta_ssim_pairs_1, 
              meta_empr_pairs=meta_empr_pairs_1)

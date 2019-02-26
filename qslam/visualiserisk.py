@@ -278,13 +278,11 @@ class qPlotter(object):
 
     def show_map(self, ax, dataobj, viewtype, pickone=None, linear=False):
         
-        # if viewtype == 'path':
-        #     print "Skip control path"
-        #     return ax
+        if viewtype != 'expt':
+            statedata = self.get_single_run(dataobj, viewtype, pickone)
         
-        statedata = self.get_single_run(dataobj, viewtype, pickone)
-        
-        # print statedata.shape
+        if viewtype == 'expt':
+            statedata =  dataobj * 1.0
         
         if linear is False:
         
@@ -341,7 +339,11 @@ class qPlotter(object):
 
     def show_control_path(self, ax, dataobj, GRIDDICT, viewtype="path", linear=False, pickone=None):
         
-        controlpath = self.get_single_run(dataobj, viewtype, pickone)
+        if viewtype != 'expt':
+            controlpath = self.get_single_run(dataobj, viewtype, pickone)
+        
+        elif viewtype == 'expt':
+            controlpath = dataobj 
         
         points = self.get_control_path(controlpath, GRIDDICT) 
         
