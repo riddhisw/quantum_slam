@@ -67,7 +67,7 @@ class RealData(object):
         for idx_element_name in data:
             setattr(RealData, idx_element_name, np.load(self.DataProp['path'])[idx_element_name])
         
-        self.expt_repetitions = int(self.binary_rewieghted.shape[1] / self.dpts)
+        self.expt_repetitions = int(self.binary_data.shape[1] / self.dpts) #### REWEIGHTED CHANGE 
         
         # Sampling without replacement at each node. Dummy helper variables.
         self.sample_repts = np.zeros((self.ions, self.expt_repetitions))
@@ -83,7 +83,7 @@ class RealData(object):
         pick_rep = self.sample_repetitions_without_replacement(node_j)
         start = int(self.choose_expt * self.expt_repetitions)
         stop = int(start + self.expt_repetitions)
-        image_data_point = self.binary_rewieghted[node_j, start :  stop][pick_rep]
+        image_data_point = self.binary_data[node_j, start :  stop][pick_rep] #### REWEIGHTED CHANGE 
         
         return image_data_point
 
@@ -114,5 +114,5 @@ class RealData(object):
         ''' Return the empirical mean of msmt data'''
         start = int(self.choose_expt * self.expt_repetitions)
         stop = int(start + self.expt_repetitions)
-        empirical_p_mean = np.mean(self.binary_rewieghted[:, start :  stop], axis=1)
+        empirical_p_mean = np.mean(self.binary_data[:, start :  stop], axis=1) #### REWEIGHTED CHANGE  
         return empirical_p_mean
