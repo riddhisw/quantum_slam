@@ -1,0 +1,2 @@
+% ROIwidth	ROIheight	Cycles	Datapoints
+37	10	500	1000

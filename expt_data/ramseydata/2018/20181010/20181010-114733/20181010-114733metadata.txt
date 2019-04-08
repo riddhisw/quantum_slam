@@ -1,0 +1,32 @@
+Total chapters	5
+Cooling	10
+Pumping	1
+Microwaves	0.053356
+Nothing	1
+Microwaves	0.053356
+Scanchapter	4
+Repetitions	50
+Detect time	0.25
+Detect bins	5
+Arbstate	0
+Selected tab	Scan parameter
+Scan parameter	Time
+Scan start	1e-06
+Scan stop	2000
+Scan step	10
+Sideband1	-1.631399
+Sideband2	-1.515619
+Sideband3	-1.513820
+Sideband4	-1.471474
+SB1 state	1
+SB2 state	1
+SB3 state	0
+SB4 state	0
+LD1	0.065
+LD2	0.065
+LD3	0.065
+LD4	0.065
+numions	6
+Carrier pi time	0.10671
+Pump time	0.1
+Cycles	30

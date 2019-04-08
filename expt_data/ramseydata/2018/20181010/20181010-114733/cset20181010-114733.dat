@@ -1,0 +1,12 @@
+%ROI Height: 10 % ROI Width: 36
+%VSAmplitude:1
+%SetTemp: -8.000000E+1
+%EMCCDGain: 1.000000E+3
+%NumberKinetics: 1
+%Cooler On: 1
+%VSSpeedIndex: 3
+%Trigger: 1
+%SetFastExtTrigger: 0
+%HS Speed Indices: 2
+%Exposure Time: 5.000000E-3
+% Kinetics mode: 1
