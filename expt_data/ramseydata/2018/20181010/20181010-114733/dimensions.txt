@@ -1,0 +1,2 @@
+% ROIwidth	ROIheight	Cycles	Datapoints
+36	10	50	201
