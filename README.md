@@ -4,7 +4,7 @@
 
 The purpose of this repo is to make public algorithmic code associated with the research publication:
 
-Gupta, R.S. et. al., 2019. Adaptive scheduling of noise characterization in quantum computers. arXiv: (forthcoming)
+Riddhi Swaroop Gupta, Alistair R. Milne, Claire L. Edmunds, Cornelius Hempel, Michael J. Biercuk. Adaptive scheduling of noise characterization in quantum computers. arXiv: https://arxiv.org/abs/1904.07225.
 
 This repo is intended to provide visibility of core algorithms in a research publication. The theoretical algorithm design decisions are justified in the research publication. 
 It is possible to code all algorithms based on the research publication alone, and parameter regime information has been provided to reproduce all reported data figures. 
